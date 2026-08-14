@@ -6,14 +6,12 @@ import type { PortfolioProject } from '../data/portfolioData';
 import type { ServiceItem } from '../data/servicesData';
 import { ImageUploader } from './ImageUploader';
 import { EditPluginModal } from './EditPluginModal';
-import { SUPABASE_SQL_SCHEMA } from '../lib/supabase';
 import {
   LayoutDashboard,
   Eye,
   Package,
   FolderKanban,
-  Star,
-  Image as ImageIcon,
+  ImageIcon,
   Palette,
   Settings,
   Lock,
@@ -25,24 +23,19 @@ import {
   ArrowUp,
   ArrowDown,
   CheckCircle,
-  XCircle,
   Pin,
   RefreshCw,
   Upload,
   Download,
-  Copy,
-  ExternalLink,
-  ShieldCheck,
-  Sparkles,
-  Sun,
-  Moon,
-  Layers,
-  Code,
   Sliders,
-  Menu,
-  FileJson,
-  UserCheck,
-  Maximize2
+  Sparkles,
+  Layers,
+  LogOut,
+  ChevronRight,
+  SlidersHorizontal,
+  Disc as DiscordIcon,
+  Mail,
+  ExternalLink,
 } from 'lucide-react';
 
 interface AdminCMSProps {
@@ -54,11 +47,9 @@ interface AdminCMSProps {
 type TabType =
   | 'dashboard'
   | 'visual_editor'
-  | 'requests'
   | 'plugins'
   | 'portfolio'
   | 'services'
-  | 'reviews'
   | 'media'
   | 'theme'
   | 'settings';
@@ -71,23 +62,13 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     plugins,
     portfolio,
     services,
-    reviews,
-    orderRequests,
-    ticketChats,
-    supabaseUrl,
-    supabaseAnonKey,
-    isSupabaseConnected,
-    setSupabaseConfig,
-    syncSupabaseRequests,
-    updateRequestStatus,
-    addProgressNote,
-    deleteOrderRequest,
-    addChatMessage,
     isAdmin,
     adminRole,
     adminPin,
     editorPin,
     discordWebhookUrl,
+    isEditMode,
+    toggleEditMode,
     loginRole,
     logoutAdmin,
     setAdminPin,
@@ -95,7 +76,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     setDiscordWebhookUrl,
     updateSection,
     updateThemeConfig,
-    resetSection,
     addMediaItem,
     deleteMediaItem,
     addPlugin,
@@ -108,225 +88,201 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     addService,
     updateService,
     deleteService,
-    addReview,
-    approveReview,
-    rejectReview,
-    deleteReview,
-    pinReview,
-    toggleHideReview,
     exportCMSBackup,
     importCMSBackup,
     resetAllCMS,
   } = useStore();
 
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [pinInput, setPinInput] = useState('');
   const [authError, setAuthError] = useState('');
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // Section & Item Editing States
   const [selectedSection, setSelectedSection] = useState<keyof CMSSections>('hero');
   const [editingPlugin, setEditingPlugin] = useState<PluginItem | null>(null);
-  const [editingPortfolio, setEditingPortfolio] = useState<PortfolioProject | null>(null);
-  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
 
-  // Media & Import File Ref
-  const [mediaName, setMediaName] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const importFileRef = useRef<HTMLInputElement | null>(null);
-
-  // Order Request Management States
-  const [selectedAdminRequest, setSelectedAdminRequest] = useState<OrderRequest | null>(null);
-  const [adminChatInput, setAdminChatInput] = useState('');
-  const [adminNoteInput, setAdminNoteInput] = useState('');
-  const [adminRequestSearch, setAdminRequestSearch] = useState('');
-  const [adminRequestFilter, setAdminRequestFilter] = useState('All');
-
-  // Supabase Connection Inputs
-  const [supaUrlInput, setSupaUrlInput] = useState(supabaseUrl);
-  const [supaKeyInput, setSupaKeyInput] = useState(supabaseAnonKey);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const res = loginRole(pinInput);
+    const res = loginRole(pinInput.trim());
     if (res.success) {
       setAuthError('');
+      setPinInput('');
       onTriggerToast(res.message);
     } else {
       setAuthError(res.message);
     }
   };
 
-  // Backup Export
-  const handleExportBackup = () => {
-    const jsonStr = exportCMSBackup();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `zyt_studio_cms_backup_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    onTriggerToast('Downloaded CMS Backup JSON file.');
-  };
-
-  // Backup Import
-  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const content = evt.target?.result as string;
-      if (content) {
-        const res = importCMSBackup(content);
-        onTriggerToast(res.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleAddMedia = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mediaName || !mediaUrl) return;
-    addMediaItem({ name: mediaName, url: mediaUrl, size: 'Online Asset' });
-    onTriggerToast(`Added ${mediaName} to Media Library.`);
-    setMediaName('');
-    setMediaUrl('');
-  };
-
   const movePlugin = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= plugins.length) return;
-    const updated = [...plugins];
-    const temp = updated[index];
-    updated[index] = updated[targetIndex];
-    updated[targetIndex] = temp;
-    reorderPlugins(updated);
-    onTriggerToast('Reordered plugins layout.');
+    const newIdx = direction === 'up' ? index - 1 : index + 1;
+    if (newIdx < 0 || newIdx >= plugins.length) return;
+    const newArr = [...plugins];
+    const temp = newArr[index];
+    newArr[index] = newArr[newIdx];
+    newArr[newIdx] = temp;
+    reorderPlugins(newArr);
+    onTriggerToast('Plugins reordered.');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-lg">
-      <div className="relative w-full max-w-7xl h-[94vh] glass-panel rounded-3xl border border-purple-500/40 overflow-hidden shadow-2xl flex flex-col bg-[#05060e]">
-        {/* Top Header Bar */}
-        <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-[#070815] via-[#0d0e22] to-[#120822] border-b border-white/10 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-2 sm:p-4 font-sans overflow-hidden">
+      <div className="relative w-full max-w-7xl h-[92vh] bg-[#070815] border border-purple-500/30 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        {/* TOP TOOLBAR HEADER */}
+        <header className="px-6 py-4 border-b border-white/10 bg-[#090b1c] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            {isAdmin && (
-              <button
-                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-                className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-gray-300"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
-
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-cyan-500 p-[1px] hidden sm:block">
-              <img src={cmsSections.navbar.logoUrl} alt="CMS Mascot" className="w-full h-full object-cover rounded-[9px]" />
+            <div className="p-2 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400">
+              <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base sm:text-lg font-bold text-white font-mono">ZYT STUDIO CMS</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  {adminRole === 'owner' ? 'OWNER ADMIN' : adminRole === 'editor' ? 'EDITOR' : 'CMS'}
-                </span>
+                <h2 className="text-lg font-bold text-white font-mono tracking-wide">
+                  ZytStudio CMS Studio
+                </h2>
+                {isAdmin && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-950 text-purple-300 border border-purple-800">
+                    Role: {adminRole}
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-gray-400 font-mono hidden sm:block">Elementor/Webflow 3-Panel Studio Builder</p>
+              <p className="text-xs text-gray-400">
+                Visual Live Website Editor & Management Studio
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-3">
             {isAdmin && (
               <>
-                {/* Export Backup JSON Button */}
                 <button
-                  onClick={handleExportBackup}
-                  className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 text-purple-200 text-xs font-mono font-semibold flex items-center gap-1.5"
-                  title="Export Backup JSON"
+                  onClick={() => {
+                    toggleEditMode();
+                    onTriggerToast(
+                      !isEditMode
+                        ? 'Visual Live Editor Enabled! Double-click text on homepage to edit.'
+                        : 'Visual Live Editor Disabled.'
+                    );
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-lg ${
+                    isEditMode
+                      ? 'bg-emerald-600 text-white shadow-emerald-600/30 border border-emerald-400'
+                      : 'bg-white/10 text-cyan-300 hover:bg-white/20 border border-cyan-500/30'
+                  }`}
                 >
-                  <Download className="w-3.5 h-3.5 text-cyan-400" /> Export Backup
+                  <Eye className="w-4 h-4" />
+                  {isEditMode ? 'Live Editor ACTIVE' : 'Enable Visual Live Editor'}
                 </button>
 
-                {/* Import Backup JSON */}
-                <input
-                  ref={importFileRef}
-                  type="file"
-                  accept="application/json"
-                  onChange={handleImportFileSelect}
-                  className="hidden"
-                />
                 <button
-                  onClick={() => importFileRef.current?.click()}
-                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-mono font-semibold flex items-center gap-1.5"
-                  title="Import Backup JSON"
+                  onClick={() => {
+                    const json = exportCMSBackup();
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `zyt_studio_backup_${Date.now()}.json`;
+                    a.click();
+                    onTriggerToast('Exported CMS Backup JSON!');
+                  }}
+                  className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-mono flex items-center gap-1.5 border border-white/10"
                 >
-                  <FileJson className="w-3.5 h-3.5 text-emerald-400" /> Import JSON
+                  <Download className="w-3.5 h-3.5" /> Export Backup
                 </button>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-mono flex items-center gap-1.5 border border-white/10"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Import Backup
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (evt) => {
+                        const content = evt.target?.result as string;
+                        const res = importCMSBackup(content);
+                        onTriggerToast(res.message);
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
+                />
 
                 <button
                   onClick={logoutAdmin}
-                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-mono border border-white/10"
+                  className="p-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 text-xs"
+                  title="Logout"
                 >
-                  Lock
+                  <LogOut className="w-4 h-4" />
                 </button>
               </>
             )}
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
+        </header>
 
+        {/* AUTHENTICATION GATE IF NOT ADMIN */}
         {!isAdmin ? (
-          /* Role-Based Login Screen */
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto my-auto space-y-6">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-600/20 to-cyan-500/20 border border-purple-500/40 flex items-center justify-center mx-auto shadow-2xl">
-              <Lock className="w-10 h-10 text-purple-400" />
-            </div>
-
-            <div>
-              <h4 className="text-2xl font-extrabold text-white font-mono">CMS Role Authorization</h4>
-              <p className="text-xs text-gray-400 mt-1">
-                Owner PIN: <code className="text-cyan-300">admin123</code> | Editor PIN: <code className="text-purple-300">editor123</code>
-              </p>
-            </div>
-
-            {authError && (
-              <div className="p-3 rounded-xl bg-red-950/60 text-red-300 border border-red-800 text-xs font-semibold">
-                {authError}
+          <div className="flex-1 flex items-center justify-center p-6 bg-radial-purple">
+            <div className="glass-card max-w-md w-full p-8 rounded-3xl border border-purple-500/40 shadow-2xl text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-purple-600/20 border border-purple-500/50 text-purple-400 flex items-center justify-center mx-auto shadow-inner">
+                <Lock className="w-8 h-8 text-cyan-400" />
               </div>
-            )}
 
-            <form onSubmit={handleLogin} className="w-full space-y-4">
-              <input
-                type="password"
-                required
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Enter Owner or Editor PIN..."
-                className="w-full px-4 py-3.5 rounded-xl glass-input text-center text-sm font-mono tracking-widest"
-              />
+              <div>
+                <h3 className="text-2xl font-extrabold text-white font-mono">
+                  Admin PIN Authorization
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Enter your Owner PIN (<code className="text-cyan-300">admin123</code>) or Editor PIN (<code className="text-purple-300">editor123</code>) to access the Studio.
+                </p>
+              </div>
 
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white font-bold text-xs shadow-xl shadow-purple-600/30 hover:scale-[1.01] transition-transform"
-              >
-                Access CMS Control Panel
-              </button>
-            </form>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input
+                  type="password"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  placeholder="Enter Passcode PIN..."
+                  className="w-full px-4 py-3.5 rounded-2xl glass-input text-center text-lg tracking-widest font-mono text-white focus:border-purple-500"
+                  autoFocus
+                />
+
+                {authError && (
+                  <p className="text-xs text-red-400 font-mono bg-red-950/60 p-2.5 rounded-xl border border-red-800">
+                    {authError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-xl shadow-purple-600/30 transition-all font-mono"
+                >
+                  Authorize Entry ➔
+                </button>
+              </form>
+            </div>
           </div>
         ) : (
-          /* 3-Panel Elementor/Webflow Studio Builder Layout */
-          <div className="flex flex-1 overflow-hidden relative">
-            {/* PANEL 1: Left Navigation & Component Tree Sidebar */}
+          /* WORKSPACE MAIN PANELS */
+          <div className="flex-1 flex overflow-hidden">
+            {/* PANEL 1: Left Navigation Sidebar */}
             <aside
-              className={`absolute lg:relative inset-y-0 left-0 z-30 w-60 bg-[#04050c] border-r border-white/10 p-4 space-y-2 shrink-0 overflow-y-auto transition-transform duration-300 ${
+              className={`w-64 bg-[#050614] border-r border-white/10 p-4 space-y-2 shrink-0 overflow-y-auto transition-transform ${
                 mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
               }`}
             >
@@ -354,22 +310,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                 }`}
               >
                 <Eye className="w-4 h-4 text-emerald-400" /> Live Section Studio
-              </button>
-
-              <button
-                onClick={() => { setActiveTab('requests'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                  activeTab === 'requests'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <FileJson className="w-4 h-4 text-cyan-400" /> Requests & Tickets
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
-                  {orderRequests.length}
-                </span>
               </button>
 
               <button
@@ -406,17 +346,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
               </button>
 
               <button
-                onClick={() => { setActiveTab('reviews'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 transition-colors ${
-                  activeTab === 'reviews'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <Star className="w-4 h-4 text-yellow-400" /> Reviews ({reviews.length})
-              </button>
-
-              <button
                 onClick={() => { setActiveTab('media'); setMobileSidebarOpen(false); }}
                 className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 transition-colors ${
                   activeTab === 'media'
@@ -450,53 +379,17 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Settings className="w-4 h-4 text-amber-400" /> Site & Webhook Settings
+                <Settings className="w-4 h-4 text-cyan-400" /> Global Settings & Discord
               </button>
-
-              <div className="pt-6">
-                <button
-                  onClick={() => {
-                    resetAllCMS();
-                    onTriggerToast('Reset complete CMS configuration to default state.');
-                  }}
-                  className="w-full py-2.5 px-3 rounded-xl bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-semibold flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Reset All Data
-                </button>
-              </div>
             </aside>
 
-            {/* PANEL 2: Center Live Canvas Preview */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#060712] space-y-6">
+            {/* PANEL 2: Center Main Work Area */}
+            <main className="flex-1 p-6 overflow-y-auto bg-[#070815] space-y-6">
               {/* DASHBOARD TAB */}
               {activeTab === 'dashboard' && (
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white font-mono">CMS Studio Dashboard</h3>
-
-                  {/* Quick Action Backup Banner */}
-                  <div className="glass-card p-6 rounded-2xl border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-purple-950/30 via-slate-900 to-cyan-950/30">
-                    <div>
-                      <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                        <FileJson className="w-5 h-5 text-cyan-400" /> Export & Import CMS Backup JSON
-                      </h4>
-                      <p className="text-xs text-gray-300 mt-1">
-                        Export full site backups or restore previously saved `.json` CMS configuration files.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <button
-                        onClick={handleExportBackup}
-                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center justify-center gap-2"
-                      >
-                        <Download className="w-4 h-4" /> Export Backup JSON
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Logo System Uploader Quick Action Card */}
-                  <div className="glass-card p-6 rounded-2xl border border-purple-500/40 space-y-4">
-                    <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                  <div className="glass-card p-6 rounded-2xl border border-purple-500/30">
+                    <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2 mb-4">
                       <ImageIcon className="w-5 h-5 text-purple-400" /> Website Logo & Mascot System
                     </h4>
 
@@ -523,44 +416,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                     </div>
                   </div>
 
-                  {/* Client Requests Metrics Banner */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <div className="glass-card p-4 rounded-2xl border border-cyan-500/30">
-                      <div className="text-[11px] text-gray-400 font-mono">Total Orders</div>
-                      <div className="text-2xl font-extrabold text-white font-mono mt-1">
-                        {orderRequests.length}
-                      </div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl border border-amber-500/30">
-                      <div className="text-[11px] text-gray-400 font-mono">Pending Orders</div>
-                      <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
-                        {orderRequests.filter((r) => r.status === 'Pending').length}
-                      </div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl border border-purple-500/30">
-                      <div className="text-[11px] text-gray-400 font-mono">In Progress</div>
-                      <div className="text-2xl font-extrabold text-purple-300 font-mono mt-1">
-                        {orderRequests.filter((r) => r.status === 'In Progress').length}
-                      </div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl border border-emerald-500/30">
-                      <div className="text-[11px] text-gray-400 font-mono">Completed</div>
-                      <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
-                        {orderRequests.filter((r) => r.status === 'Completed').length}
-                      </div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl border border-indigo-500/30 col-span-2 sm:col-span-1">
-                      <div className="text-[11px] text-gray-400 font-mono">Est. Revenue</div>
-                      <div className="text-xl font-extrabold text-cyan-300 font-mono mt-1">
-                        ₹{orderRequests
-                          .filter((r) => r.currency === 'INR' && r.status !== 'Rejected')
-                          .reduce((acc, r) => acc + (parseInt(r.budgetMin || '0') + parseInt(r.budgetMax || '0')) / 2, 0)
-                          .toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="glass-card p-5 rounded-2xl">
                       <div className="text-xs text-gray-400">Total Plugins</div>
                       <div className="text-3xl font-extrabold text-white font-mono mt-1 text-glow-purple">
@@ -568,344 +424,106 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                       </div>
                     </div>
                     <div className="glass-card p-5 rounded-2xl">
-                      <div className="text-xs text-gray-400">Portfolio Projects</div>
-                      <div className="text-3xl font-extrabold text-white font-mono mt-1 text-glow-cyan">
+                      <div className="text-xs text-gray-400 font-mono">Portfolio Items</div>
+                      <div className="text-3xl font-extrabold text-cyan-400 font-mono mt-1">
                         {portfolio.length}
                       </div>
                     </div>
                     <div className="glass-card p-5 rounded-2xl">
-                      <div className="text-xs text-gray-400">Reviews (Approved)</div>
-                      <div className="text-3xl font-extrabold text-yellow-400 font-mono mt-1">
-                        {reviews.filter((r) => r.status === 'approved').length}
-                      </div>
-                    </div>
-                    <div className="glass-card p-5 rounded-2xl">
-                      <div className="text-xs text-gray-400">Media Assets</div>
-                      <div className="text-3xl font-extrabold text-emerald-400 font-mono mt-1">
-                        {mediaLibrary.length}
+                      <div className="text-xs text-gray-400 font-mono">Active Services</div>
+                      <div className="text-3xl font-extrabold text-amber-400 font-mono mt-1">
+                        {services.length}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* LIVE SECTION STUDIO TAB */}
+              {/* VISUAL EDITOR / SECTION INSPECTOR */}
               {activeTab === 'visual_editor' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white font-mono">Live Section Studio Preview</h3>
-                      <p className="text-xs text-gray-400">Select any section to inspect and edit its properties live.</p>
+                      <h3 className="text-xl font-bold text-white font-mono">
+                        Live Section Inspector Studio
+                      </h3>
+                      <p className="text-xs text-gray-400">
+                        Select a section below to edit its exact copy and images.
+                      </p>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        resetSection(selectedSection);
-                        onTriggerToast(`Reset ${selectedSection} section to default.`);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center gap-1.5"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" /> Reset Section
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={toggleEditMode}
+                        className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 ${
+                          isEditMode ? 'bg-emerald-600 text-white' : 'bg-white/10 text-cyan-300'
+                        }`}
+                      >
+                        <Eye className="w-4 h-4" />
+                        {isEditMode ? 'Edit Mode ON' : 'Turn On Edit Mode'}
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Section Selector Pills */}
-                  <div className="flex flex-wrap gap-2">
-                    {(['hero', 'navbar', 'about', 'plugins', 'portfolio', 'services', 'reviews', 'payment', 'contact', 'footer'] as Array<keyof CMSSections>).map((sec) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {(
+                      [
+                        'hero',
+                        'navbar',
+                        'about',
+                        'plugins',
+                        'portfolio',
+                        'services',
+                        'payment',
+                        'contact',
+                        'footer',
+                      ] as Array<keyof CMSSections>
+                    ).map((sec) => (
                       <button
                         key={sec}
                         onClick={() => setSelectedSection(sec)}
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider font-mono transition-all ${
+                        className={`p-3.5 rounded-2xl border text-left capitalize transition-all ${
                           selectedSection === sec
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                            : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10'
+                            ? 'bg-purple-600/30 border-purple-500 text-white font-bold'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
                         }`}
                       >
-                        {sec}
+                        <div className="text-xs font-mono font-bold">{sec} Section</div>
                       </button>
                     ))}
                   </div>
-
-                  {/* Section Live Preview Screen Box */}
-                  <div className="glass-card p-6 rounded-3xl border border-purple-500/40 space-y-4 bg-[#08091a]">
-                    <div className="flex items-center justify-between text-xs text-gray-400 font-mono border-b border-white/10 pb-3">
-                      <span className="flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-cyan-400" /> Section Canvas Preview: <strong className="text-white uppercase">{selectedSection}</strong>
-                      </span>
-                      <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                        ⚡ Live Synced
-                      </span>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-[#04050d] border border-white/10 space-y-3">
-                      <div className="text-xs font-bold text-purple-400 font-mono">
-                        {cmsSections[selectedSection]?.subtitle || selectedSection}
-                      </div>
-                      <div className="text-2xl font-extrabold text-white">
-                        {cmsSections[selectedSection]?.title || cmsSections[selectedSection]?.brandName}
-                      </div>
-                      <div className="text-xs text-gray-300 leading-relaxed">
-                        {cmsSections[selectedSection]?.description || cmsSections[selectedSection]?.tagline}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* REQUESTS & CLIENT TICKETS TAB (2-PANEL ORDER MANAGEMENT CENTER) */}
-              {activeTab === 'requests' && (
-                <div className="space-y-4 flex flex-col h-[calc(100vh-180px)] overflow-hidden">
-                  <div className="flex items-center justify-between shrink-0">
-                    <div>
-                      <h3 className="text-xl font-bold text-white font-mono">Order Management Center</h3>
-                      <p className="text-xs text-gray-400">Click any ticket to load full specifications, chat in real-time, update status & add progress notes.</p>
-                    </div>
-                    <span className="text-xs text-cyan-400 font-mono font-bold">
-                      Total Orders: {orderRequests.length}
-                    </span>
-                  </div>
-
-                  {/* 2-Panel Split Workspace */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-hidden">
-                    {/* Left Column: Ticket List + Search & Filters */}
-                    <div className="lg:col-span-5 glass-card rounded-2xl border border-white/10 flex flex-col overflow-hidden bg-[#04050d]">
-                      {/* Search & Filters */}
-                      <div className="p-3 border-b border-white/10 space-y-2 shrink-0">
-                        <input
-                          type="text"
-                          value={adminRequestSearch}
-                          onChange={(e) => setAdminRequestSearch(e.target.value)}
-                          placeholder="Search tickets by ID, Name, Discord..."
-                          className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono"
-                        />
-
-                        <div className="flex flex-wrap gap-1 text-[10px] font-mono">
-                          {['All', 'Pending', 'Accepted', 'In Progress', 'Testing', 'Completed', 'Rejected'].map((st) => (
-                            <button
-                              key={st}
-                              onClick={() => setAdminRequestFilter(st)}
-                              className={`px-2.5 py-1 rounded-lg transition-all ${
-                                adminRequestFilter === st
-                                  ? 'bg-purple-600 text-white font-bold'
-                                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                              }`}
-                            >
-                              {st}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Ticket Items List */}
-                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        {orderRequests
-                          .filter((req) => {
-                            const matchFilter = adminRequestFilter === 'All' || req.status === adminRequestFilter;
-                            const matchSearch =
-                              !adminRequestSearch ||
-                              req.id.toLowerCase().includes(adminRequestSearch.toLowerCase()) ||
-                              req.name.toLowerCase().includes(adminRequestSearch.toLowerCase()) ||
-                              req.discord.toLowerCase().includes(adminRequestSearch.toLowerCase());
-                            return matchFilter && matchSearch;
-                          })
-                          .map((req) => (
-                            <div
-                              key={req.id}
-                              onClick={() => setSelectedAdminRequest(req)}
-                              className={`p-3.5 rounded-xl cursor-pointer border transition-all ${
-                                selectedAdminRequest?.id === req.id
-                                  ? 'bg-purple-950/40 border-purple-500/60 shadow-lg'
-                                  : 'bg-white/5 border-white/5 hover:border-purple-500/30'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-bold text-cyan-400 font-mono">#{req.id}</span>
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
-                                  {req.status}
-                                </span>
-                              </div>
-                              <div className="text-xs font-bold text-white font-mono">{req.name}</div>
-                              <div className="text-[11px] text-gray-400 truncate mt-0.5">{req.pluginIdea}</div>
-                              <div className="flex items-center justify-between pt-2 mt-1 border-t border-white/5 text-[10px] font-mono text-gray-400">
-                                <span className="text-emerald-400 font-bold">{req.budgetFormatted}</span>
-                                <span>{req.createdAt}</span>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                    {/* Right Column: Complete Ticket Conversation & Specs Panel */}
-                    <div className="lg:col-span-7 glass-card rounded-2xl border border-white/10 flex flex-col overflow-hidden bg-[#060712]">
-                      {selectedAdminRequest ? (
-                        <div className="flex flex-col h-full overflow-hidden">
-                          {/* Ticket Header & Status Actions */}
-                          <div className="p-4 border-b border-white/10 bg-[#08091a] space-y-3 shrink-0">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h4 className="text-lg font-bold text-white font-mono">
-                                    Ticket #{selectedAdminRequest.id}
-                                  </h4>
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
-                                    {selectedAdminRequest.status}
-                                  </span>
-                                </div>
-                                <span className="text-[11px] text-gray-400 font-mono">Client: {selectedAdminRequest.name} • {selectedAdminRequest.email}</span>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={selectedAdminRequest.status}
-                                  onChange={(e) => {
-                                    updateRequestStatus(selectedAdminRequest.id, e.target.value as any);
-                                    onTriggerToast(`Updated status to ${e.target.value}`);
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
-                                >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Accepted">Accepted</option>
-                                  <option value="In Progress">In Progress</option>
-                                  <option value="Testing">Testing</option>
-                                  <option value="Completed">Completed</option>
-                                  <option value="Rejected">Rejected</option>
-                                </select>
-
-                                <button
-                                  onClick={() => {
-                                    deleteOrderRequest(selectedAdminRequest.id);
-                                    setSelectedAdminRequest(null);
-                                    onTriggerToast(`Deleted ticket #${selectedAdminRequest.id}`);
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-mono font-bold"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Full Specifications Box */}
-                            <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs leading-relaxed">
-                              <div className="font-bold text-purple-300 mb-1 font-mono">Full Specifications:</div>
-                              {selectedAdminRequest.pluginIdea}
-                            </div>
-
-                            {/* Info Grid */}
-                            <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
-                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                <span className="text-gray-400 block text-[9px]">Discord</span>
-                                <strong className="text-indigo-300">{selectedAdminRequest.discord}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                <span className="text-gray-400 block text-[9px]">Budget</span>
-                                <strong className="text-emerald-400">{selectedAdminRequest.budgetFormatted}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                <span className="text-gray-400 block text-[9px]">Deadline</span>
-                                <strong className="text-amber-300">{selectedAdminRequest.deadline}</strong>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Chat & Progress Notes Section */}
-                          <div className="flex-1 flex flex-col overflow-hidden bg-[#04050c]">
-                            {/* Messages Stream */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                              {ticketChats
-                                .filter((c) => c.requestId === selectedAdminRequest.id)
-                                .map((msg) => (
-                                  <div
-                                    key={msg.id}
-                                    className={`flex flex-col ${
-                                      msg.sender === 'Admin' ? 'items-end' : 'items-start'
-                                    }`}
-                                  >
-                                    <div className="text-[10px] text-gray-400 font-mono mb-0.5">
-                                      {msg.senderName} ({msg.sender}) • {msg.timestamp}
-                                    </div>
-                                    <div
-                                      className={`max-w-md p-3 rounded-xl text-xs ${
-                                        msg.sender === 'Admin'
-                                          ? 'bg-purple-600 text-white rounded-tr-none'
-                                          : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/10'
-                                      }`}
-                                    >
-                                      {msg.text}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-
-                            {/* Real-time Admin Chat Input */}
-                            <form
-                              onSubmit={(e) => {
-                                e.preventDefault();
-                                if (!adminChatInput.trim()) return;
-                                addChatMessage({
-                                  requestId: selectedAdminRequest.id,
-                                  sender: 'Admin',
-                                  senderName: 'Zyt Developer',
-                                  text: adminChatInput.trim(),
-                                });
-                                setAdminChatInput('');
-                                onTriggerToast('Sent message to client ticket!');
-                              }}
-                              className="p-3 border-t border-white/10 bg-[#070818] flex gap-2"
-                            >
-                              <input
-                                type="text"
-                                value={adminChatInput}
-                                onChange={(e) => setAdminChatInput(e.target.value)}
-                                placeholder={`Reply to ${selectedAdminRequest.name}...`}
-                                className="flex-1 px-3.5 py-2.5 rounded-xl glass-input text-xs"
-                              />
-                              <button
-                                type="submit"
-                                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
-                              >
-                                Send Reply
-                              </button>
-                            </form>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
-                          <p className="text-sm font-mono font-bold text-white">Select an order ticket on the left</p>
-                          <p className="text-xs text-gray-500 mt-1">Loads complete specifications, real-time client chat, and status actions.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* PLUGINS CONTENT TAB */}
+              {/* PLUGINS TAB */}
               {activeTab === 'plugins' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-white font-mono">Plugins Content & Management</h3>
+                    <h3 className="text-xl font-bold text-white font-mono">
+                      Plugin Suite Management
+                    </h3>
                     <button
-                      onClick={() =>
-                        setEditingPlugin({
-                          id: 'plugin_' + Date.now(),
-                          name: 'Mocap',
-                          tagline: 'Professional Motion Capture & Cinematic Animation Plugin',
-                          description: 'Professional Minecraft motion capture and cinematic animation plugin with camera paths, emotes, NPC animation and recording tools.',
-                          category: 'Premium Plugin',
-                          minecraftVersion: '1.18 - 1.20.6',
+                      onClick={() => {
+                        const newPlg: PluginItem = {
+                          id: 'mocap-studio-' + Date.now(),
+                          name: 'Mocap Studio',
                           price: '$39.99',
-                          rating: 5.0,
-                          salesCount: 120,
-                          features: ['Camera Paths & Bezier Interpolation', 'Player Emotes & Custom NPC Animation', 'Recording Tools'],
-                          fullFeatures: ['Camera Paths & Bezier Interpolation', 'Player Emotes & Custom NPC Animation', 'Recording Tools'],
-                          commands: [{ command: '/mocap record', permission: 'mocap.admin', description: 'Start recording' }],
-                          configSnippet: '# Mocap Config\nmocap:\n  fps: 60',
-                          iconName: 'Video',
-                          imageUrl: '/zyt_mascot.jpg',
-                          downloadUrl: 'https://zytstudio.com/download/mocap.jar',
-                        })
-                      }
-                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5"
+                          description:
+                            'Professional Minecraft motion capture and cinematic animation plugin with camera paths, emotes, NPC animation and recording tools.',
+                          image: '/zyt_mascot.jpg',
+                          features: [
+                            'Live Motion Capture Sync',
+                            'Cinematic Camera Pathing',
+                            'Custom NPC Emotes',
+                            'Keyframe Timeline Editor',
+                          ],
+                          category: 'Recording / Cinematic Tools',
+                          downloadUrl: 'https://spigotmc.org',
+                        };
+                        addPlugin(newPlg);
+                        onTriggerToast('Added Mocap Studio Plugin!');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold font-mono flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" /> Add Mocap / New Plugin
                     </button>
@@ -978,48 +596,42 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-white font-mono">Services Management</h3>
                     <button
-                      onClick={() =>
-                        setEditingService({
-                          id: 'serv_' + Date.now(),
-                          title: 'New Custom Service',
-                          shortDesc: 'Short description...',
-                          fullDesc: 'Full service breakdown...',
-                          iconName: 'Code',
-                          features: ['Feature 1'],
-                          deliveryTime: '2 Days',
-                          priceStart: 'From $49',
-                        })
-                      }
-                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5"
+                      onClick={() => {
+                        const newSrv: ServiceItem = {
+                          id: 'srv_' + Date.now(),
+                          title: 'Custom Optimization & Audit',
+                          price: 'From $49',
+                          description: 'Complete server thread tuning, spark profiler analysis and memory leak patch.',
+                          features: ['Spark Profiler Audit', 'Async Thread Setup', 'Garbage Collector Tuning'],
+                          iconName: 'Gauge',
+                          popular: true,
+                        };
+                        addService(newSrv);
+                        onTriggerToast('Added new service!');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold font-mono flex items-center gap-2"
                     >
-                      <Plus className="w-4 h-4" /> Add Service Card
+                      <Plus className="w-4 h-4" /> Add Service
                     </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {services.map((srv) => (
-                      <div key={srv.id} className="glass-card p-5 rounded-2xl space-y-3 border border-white/10 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <h5 className="text-base font-bold text-white font-mono">{srv.title}</h5>
-                            <span className="text-xs text-cyan-400 font-mono font-bold">{srv.priceStart}</span>
-                          </div>
-                          <p className="text-xs text-gray-300 mt-1">{srv.shortDesc}</p>
+                      <div key={srv.id} className="glass-card p-5 rounded-2xl border border-white/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-base font-bold text-white font-mono">{srv.title}</h4>
+                          <span className="text-xs bg-purple-950 text-purple-300 px-2.5 py-1 rounded font-mono font-bold">
+                            {srv.price}
+                          </span>
                         </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
-                          <button
-                            onClick={() => setEditingService(srv)}
-                            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs flex items-center gap-1"
-                          >
-                            <Edit className="w-3.5 h-3.5 text-cyan-400" /> Edit
-                          </button>
+                        <p className="text-xs text-gray-400">{srv.description}</p>
+                        <div className="pt-2 flex justify-end">
                           <button
                             onClick={() => {
                               deleteService(srv.id);
                               onTriggerToast(`Deleted ${srv.title}`);
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 text-xs flex items-center gap-1"
+                            className="px-3 py-1.5 rounded-xl bg-red-950/60 text-red-300 border border-red-800 text-xs flex items-center gap-1"
                           >
                             <Trash2 className="w-3.5 h-3.5" /> Delete
                           </button>
@@ -1030,83 +642,19 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                 </div>
               )}
 
-              {/* REVIEWS TAB */}
-              {activeTab === 'reviews' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-white font-mono">Review Moderation</h3>
-                    <span className="text-xs text-gray-400">Total: {reviews.length}</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {reviews.map((rev) => (
-                      <div key={rev.id} className="p-4 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-white font-mono">{rev.author}</span>
-                            <span className="text-xs text-yellow-400">★ {rev.rating}</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 uppercase">
-                              {rev.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-300 italic mt-1 font-sans">"{rev.quote}"</p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {rev.status !== 'approved' && (
-                            <button
-                              onClick={() => { approveReview(rev.id); onTriggerToast('Review approved!'); }}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-950/60 text-emerald-300 border border-emerald-800 text-xs"
-                            >
-                              Approve
-                            </button>
-                          )}
-                          <button
-                            onClick={() => { pinReview(rev.id); onTriggerToast('Toggled review pin'); }}
-                            className="p-1.5 rounded-lg bg-white/10 text-purple-300"
-                          >
-                            <Pin className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => { deleteReview(rev.id); onTriggerToast('Deleted review'); }}
-                            className="p-1.5 rounded-lg bg-red-950/60 text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* MEDIA LIBRARY TAB */}
+              {/* MEDIA MANAGER TAB */}
               {activeTab === 'media' && (
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white font-mono">Media Library & Uploader</h3>
-
-                  <div className="glass-card p-6 rounded-2xl border border-purple-500/30 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-white font-mono">Media Asset Manager</h3>
                     <ImageUploader
-                      label="Choose Image File or Drag & Drop"
-                      value={mediaUrl}
+                      label="Upload New Media"
+                      value=""
                       onChange={(newUrl) => {
-                        setMediaUrl(newUrl);
-                        addMediaItem({
-                          name: mediaName || 'Uploaded Asset',
-                          url: newUrl,
-                          size: 'Custom Upload',
-                        });
-                        onTriggerToast('Asset uploaded into Media Library!');
+                        addMediaItem({ name: 'Uploaded Asset', url: newUrl, size: 'Original' });
+                        onTriggerToast('Added asset to media library!');
                       }}
                       onTriggerToast={onTriggerToast}
-                    />
-
-                    <input
-                      type="text"
-                      value={mediaName}
-                      onChange={(e) => setMediaName(e.target.value)}
-                      placeholder="Asset Name (e.g. Mascot Logo)"
-                      className="w-full px-3.5 py-2 rounded-xl glass-input text-xs"
                     />
                   </div>
 
@@ -1135,7 +683,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                 </div>
               )}
 
-              {/* THEME & SETTINGS TAB */}
+              {/* THEME TAB */}
               {activeTab === 'theme' && (
                 <div className="space-y-6">
                   <h3 className="text-xl font-bold text-white font-mono">Theme Palette</h3>
@@ -1173,108 +721,40 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                 </div>
               )}
 
+              {/* SETTINGS TAB */}
               {activeTab === 'settings' && (
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white font-mono">Global Settings & Shared Database</h3>
+                  <h3 className="text-xl font-bold text-white font-mono">Global Settings & Links</h3>
 
-                  {/* SUPABASE REALTIME DATABASE SETUP CARD */}
                   <div className="glass-card p-6 rounded-2xl border border-purple-500/40 space-y-4 text-xs">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div>
-                        <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-cyan-400" /> Supabase Realtime Shared Database Connection
-                        </h4>
-                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">
-                          Connect your Supabase project to synchronize orders live across all browsers and devices.
-                        </p>
-                      </div>
+                    <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                      <DiscordIcon className="w-4 h-4 text-indigo-400" /> Discord & Contact Links
+                    </h4>
 
-                      {isSupabaseConnected ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> ⚡ DB Live & Synced
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-950 text-amber-400 border border-amber-800">
-                          ⚠️ Local Fallback (Enter Credentials Below)
-                        </span>
-                      )}
-                    </div>
-
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        setSupabaseConfig(supaUrlInput.trim(), supaKeyInput.trim());
-                        syncSupabaseRequests();
-                        onTriggerToast('Saved Supabase configuration! Testing live DB sync...');
-                      }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="text-gray-300 font-semibold font-mono">Supabase Project URL</label>
-                        <input
-                          type="text"
-                          value={supaUrlInput}
-                          onChange={(e) => setSupaUrlInput(e.target.value)}
-                          placeholder="e.g. https://your-project-id.supabase.co"
-                          className="w-full p-3 rounded-xl glass-input font-mono mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-gray-300 font-semibold font-mono">Supabase Public Anon Key</label>
-                        <input
-                          type="password"
-                          value={supaKeyInput}
-                          onChange={(e) => setSupaKeyInput(e.target.value)}
-                          placeholder="e.g. eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                          className="w-full p-3 rounded-xl glass-input font-mono mt-1"
-                        />
-                      </div>
-
-                      <div className="flex gap-3 pt-2">
-                        <button
-                          type="submit"
-                          className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30"
-                        >
-                          Save & Connect Live Database
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            syncSupabaseRequests();
-                            onTriggerToast('Re-synced database table plugin_requests!');
-                          }}
-                          className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 font-bold text-xs flex items-center gap-1.5"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" /> Sync Database Now
-                        </button>
-                      </div>
-                    </form>
-
-                    {/* SQL SCHEMA MIGRATION SCRIPT CARD */}
-                    <div className="pt-4 border-t border-white/10 space-y-2">
-                      <div className="text-xs font-bold text-purple-300 font-mono">Supabase SQL Editor Setup Migration Script:</div>
-                      <p className="text-[11px] text-gray-400">
-                        Copy this SQL script into your Supabase SQL Editor to automatically create the <code className="text-cyan-300 font-mono">plugin_requests</code> table with Realtime enabled:
-                      </p>
-                      <div className="relative bg-[#030409] p-3 rounded-xl border border-white/10 overflow-x-auto">
-                        <pre className="text-[10px] text-gray-300 font-mono whitespace-pre-wrap">{SUPABASE_SQL_SCHEMA}</pre>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
-                            onTriggerToast('Copied SQL Schema to clipboard!');
-                          }}
-                          className="absolute top-2 right-2 px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-mono font-bold"
-                        >
-                          Copy SQL
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="glass-card p-6 rounded-2xl border border-purple-500/30 space-y-4 text-xs">
                     <div>
-                      <label className="text-gray-300 font-semibold">Discord Webhook URL</label>
+                      <label className="text-gray-300 font-semibold font-mono">Discord Invite Link</label>
+                      <input
+                        type="text"
+                        value={cmsSections.contact.discordInvite}
+                        onChange={(e) => updateSection('contact', { discordInvite: e.target.value })}
+                        placeholder="e.g. https://discord.gg/yourserver"
+                        className="w-full p-3 rounded-xl glass-input font-mono mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-semibold font-mono font-mono">Official Email</label>
+                      <input
+                        type="text"
+                        value={cmsSections.contact.email}
+                        onChange={(e) => updateSection('contact', { email: e.target.value })}
+                        placeholder="e.g. contact@zytstudio.com"
+                        className="w-full p-3 rounded-xl glass-input font-mono mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-semibold font-mono font-mono">Discord Webhook URL</label>
                       <input
                         type="text"
                         value={discordWebhookUrl}
@@ -1282,8 +762,9 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                         className="w-full p-3 rounded-xl glass-input font-mono mt-1"
                       />
                     </div>
+
                     <div>
-                      <label className="text-gray-300 font-semibold">Master Owner PIN</label>
+                      <label className="text-gray-300 font-semibold font-mono font-mono">Master Owner PIN</label>
                       <input
                         type="text"
                         value={adminPin}
@@ -1291,6 +772,13 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                         className="w-full p-3 rounded-xl glass-input font-mono mt-1"
                       />
                     </div>
+
+                    <button
+                      onClick={() => onTriggerToast('Saved global settings!')}
+                      className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                    >
+                      Save Settings
+                    </button>
                   </div>
                 </div>
               )}
@@ -1336,66 +824,20 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                       className="w-full p-2.5 rounded-xl glass-input mt-1"
                     />
                   </div>
-                  <ImageUploader
-                    label="3D Mascot Image"
-                    value={cmsSections.hero.mascotUrl}
-                    onChange={(newUrl) => updateSection('hero', { mascotUrl: newUrl })}
-                    onTriggerToast={onTriggerToast}
-                  />
-                </div>
-              )}
-
-              {selectedSection === 'navbar' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-gray-400 font-semibold">Brand Word 1</label>
-                    <input
-                      type="text"
-                      value={cmsSections.navbar.brandName}
-                      onChange={(e) => updateSection('navbar', { brandName: e.target.value })}
-                      className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 font-semibold">Brand Word 2</label>
-                    <input
-                      type="text"
-                      value={cmsSections.navbar.brandTagline}
-                      onChange={(e) => updateSection('navbar', { brandTagline: e.target.value })}
-                      className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
-                    />
-                  </div>
-                  <ImageUploader
-                    label="Website Logo"
-                    value={cmsSections.navbar.logoUrl}
-                    onChange={(newUrl) => updateSection('navbar', { logoUrl: newUrl })}
-                    onTriggerToast={onTriggerToast}
-                  />
-                </div>
-              )}
-
-              {selectedSection === 'payment' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-gray-400 font-semibold">Official UPI ID</label>
-                    <input
-                      type="text"
-                      value={cmsSections.payment.upiId}
-                      onChange={(e) => updateSection('payment', { upiId: e.target.value })}
-                      className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
-                    />
-                  </div>
-                  <ImageUploader
-                    label="UPI QR Code Image"
-                    value={cmsSections.payment.qrCodeUrl}
-                    onChange={(newUrl) => updateSection('payment', { qrCodeUrl: newUrl })}
-                    onTriggerToast={onTriggerToast}
-                  />
                 </div>
               )}
 
               {selectedSection === 'contact' && (
                 <div className="space-y-4">
+                  <div>
+                    <label className="text-gray-400 font-semibold">Discord Invite Link</label>
+                    <input
+                      type="text"
+                      value={cmsSections.contact.discordInvite}
+                      onChange={(e) => updateSection('contact', { discordInvite: e.target.value })}
+                      className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
+                    />
+                  </div>
                   <div>
                     <label className="text-gray-400 font-semibold">Discord Username</label>
                     <input
@@ -1411,15 +853,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                       type="text"
                       value={cmsSections.contact.email}
                       onChange={(e) => updateSection('contact', { email: e.target.value })}
-                      className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 font-semibold">Response Time</label>
-                    <input
-                      type="text"
-                      value={cmsSections.contact.responseTime}
-                      onChange={(e) => updateSection('contact', { responseTime: e.target.value })}
                       className="w-full p-2.5 rounded-xl glass-input mt-1 font-mono"
                     />
                   </div>

@@ -5,16 +5,6 @@ import { PORTFOLIO_PROJECTS } from '../data/portfolioData';
 import type { PortfolioProject } from '../data/portfolioData';
 import { SERVICES_DATA } from '../data/servicesData';
 import type { ServiceItem } from '../data/servicesData';
-import { REVIEWS_DATA } from '../data/reviewsData';
-import type { ReviewItem } from '../data/reviewsData';
-import { getSupabaseClient } from '../lib/supabase';
-
-export interface ExtendedReviewItem extends ReviewItem {
-  status: 'approved' | 'pending' | 'rejected';
-  pinned?: boolean;
-  hidden?: boolean;
-  discord?: string;
-}
 
 export interface ThemeConfig {
   primaryColor: string;
@@ -31,35 +21,6 @@ export interface MediaItem {
   url: string;
   size: string;
   date: string;
-}
-
-export type RequestStatus = 'Pending' | 'Accepted' | 'In Progress' | 'Testing' | 'Completed' | 'Rejected';
-
-export interface OrderRequest {
-  id: string; // e.g. ZYT-849201
-  ownerId: string; // Unique client owner ID
-  name: string;
-  email: string;
-  discord: string;
-  serverName?: string;
-  pluginIdea: string;
-  currency: 'INR' | 'USD';
-  budgetMin: string;
-  budgetMax: string;
-  budgetFormatted: string;
-  deadline: string;
-  status: RequestStatus;
-  progressNotes?: string[];
-  createdAt: string;
-}
-
-export interface TicketChatMessage {
-  id: string;
-  requestId: string;
-  sender: 'Client' | 'Admin';
-  senderName: string;
-  text: string;
-  timestamp: string;
 }
 
 export interface CMSSections {
@@ -101,11 +62,6 @@ export interface CMSSections {
     subtitle: string;
     description: string;
   };
-  reviews: {
-    title: string;
-    subtitle: string;
-    description: string;
-  };
   payment: {
     title: string;
     subtitle: string;
@@ -140,22 +96,7 @@ interface StoreContextType {
   mediaLibrary: MediaItem[];
   plugins: PluginItem[];
   portfolio: PortfolioProject[];
-  reviews: ExtendedReviewItem[];
   services: ServiceItem[];
-  orderRequests: OrderRequest[];
-  ticketChats: TicketChatMessage[];
-
-  // Supabase Database Connection
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  isSupabaseConnected: boolean;
-  setSupabaseConfig: (url: string, key: string) => void;
-  syncSupabaseRequests: () => Promise<void>;
-
-  // Client Session & Security
-  clientOwnerId: string;
-  getUserRequests: () => OrderRequest[];
-  canAccessTicket: (requestId: string) => boolean;
 
   // Admin Auth
   isAdmin: boolean;
@@ -221,23 +162,6 @@ interface StoreContextType {
   updateService: (service: ServiceItem) => void;
   deleteService: (id: string) => void;
 
-  // Order Requests & Ticket System
-  addOrderRequest: (req: Omit<OrderRequest, 'ownerId' | 'status' | 'createdAt'>) => Promise<OrderRequest>;
-  updateRequestStatus: (id: string, status: RequestStatus) => Promise<void>;
-  addProgressNote: (id: string, note: string) => Promise<void>;
-  deleteOrderRequest: (id: string) => Promise<void>;
-  addChatMessage: (msg: Omit<TicketChatMessage, 'id' | 'timestamp'>) => Promise<void>;
-
-  // Reviews CRUD
-  addReview: (review: Omit<ExtendedReviewItem, 'id'>) => void;
-  submitReview: (data: { author: string; discord: string; rating: number; quote: string }) => { success: boolean; message: string };
-  approveReview: (id: string) => void;
-  rejectReview: (id: string) => void;
-  deleteReview: (id: string) => void;
-  pinReview: (id: string) => void;
-  toggleHideReview: (id: string) => void;
-  updateReview: (review: ExtendedReviewItem) => void;
-
   // Backup Import/Export
   exportCMSBackup: () => string;
   importCMSBackup: (jsonString: string) => { success: boolean; message: string };
@@ -258,10 +182,8 @@ const DEFAULT_SECTIONS: CMSSections = {
       { name: 'Portfolio', href: '#portfolio' },
       { name: 'Services', href: '#services' },
       { name: 'Why Us', href: '#why-us' },
-      { name: 'Reviews', href: '#reviews' },
       { name: 'Payment', href: '#payment' },
       { name: 'Contact', href: '#contact' },
-      { name: 'Requests', href: '#requests' },
     ],
   },
   hero: {
@@ -301,11 +223,6 @@ const DEFAULT_SECTIONS: CMSSections = {
     title: 'Professional Services',
     subtitle: 'Tailored Development Services',
     description: 'From ground-up plugin coding to full server optimization, Zyt Studio provides end-to-end Minecraft development solutions.',
-  },
-  reviews: {
-    title: 'Client Reviews',
-    subtitle: 'Real Client Feedback',
-    description: 'Verified feedback from Minecraft server owners, creators, and community leads.',
   },
   payment: {
     title: 'Payment Methods',
@@ -350,21 +267,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [editorPin, setEditorPinState] = useState<string>(() => localStorage.getItem('zyt_editor_pin') || 'editor123');
   const [discordWebhookUrl, setDiscordWebhookUrlState] = useState<string>(() => localStorage.getItem('zyt_discord_webhook') || '');
 
-  // Supabase Database Connection Credentials
-  const [supabaseUrl, setSupabaseUrlState] = useState<string>(() => localStorage.getItem('zyt_supabase_url') || import.meta.env.VITE_SUPABASE_URL || '');
-  const [supabaseAnonKey, setSupabaseAnonKeyState] = useState<string>(() => localStorage.getItem('zyt_supabase_key') || import.meta.env.VITE_SUPABASE_ANON_KEY || '');
-  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(false);
-
-  // Unique Client Owner ID Session for strict Ticket Permissions
-  const [clientOwnerId] = useState<string>(() => {
-    let saved = localStorage.getItem('zyt_client_owner_id');
-    if (!saved) {
-      saved = 'client_' + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('zyt_client_owner_id', saved);
-    }
-    return saved;
-  });
-
   // CMS Section Contents
   const [cmsSections, setCmsSections] = useState<CMSSections>(() => {
     const saved = localStorage.getItem('zyt_cms_sections');
@@ -406,122 +308,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : SERVICES_DATA;
   });
 
-  // Reviews
-  const [reviews, setReviews] = useState<ExtendedReviewItem[]>(() => {
-    const saved = localStorage.getItem('zyt_reviews');
-    if (saved) return JSON.parse(saved);
-    return REVIEWS_DATA.map((r) => ({
-      ...r,
-      status: 'approved' as const,
-      pinned: r.id === '1',
-      hidden: false,
-      discord: '@client_user',
-    }));
-  });
-
-  // Order Requests Platform State (Real Database State - NO HARDCODED DEMO TICKETS)
-  const [orderRequests, setOrderRequests] = useState<OrderRequest[]>(() => {
-    const saved = localStorage.getItem('zyt_order_requests');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Ticket Chat System State
-  const [ticketChats, setTicketChats] = useState<TicketChatMessage[]>(() => {
-    const saved = localStorage.getItem('zyt_request_chats');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // REALTIME SUPABASE DATABASE SYNC & SUBSCRIPTION
-  const syncSupabaseRequests = async () => {
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (!client) {
-      setIsSupabaseConnected(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await client
-        .from('plugin_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Supabase fetch error:', error.message);
-        setIsSupabaseConnected(false);
-        return;
-      }
-
-      setIsSupabaseConnected(true);
-
-      if (data) {
-        const fetchedRequests: OrderRequest[] = [];
-        const fetchedChats: TicketChatMessage[] = [];
-
-        data.forEach((row: any) => {
-          fetchedRequests.push({
-            id: row.ticket_id,
-            ownerId: row.owner_id,
-            name: row.client_name,
-            email: row.email,
-            discord: row.discord,
-            serverName: row.server_name || 'N/A',
-            pluginIdea: row.plugin_description,
-            currency: row.currency || 'INR',
-            budgetMin: row.budget_min || '0',
-            budgetMax: row.budget_max || '0',
-            budgetFormatted: row.budget_formatted || '₹0',
-            deadline: row.deadline || 'Within 1 Week',
-            status: row.status as RequestStatus,
-            progressNotes: Array.isArray(row.progress_notes) ? row.progress_notes : [],
-            createdAt: new Date(row.created_at).toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          });
-
-          if (Array.isArray(row.messages)) {
-            row.messages.forEach((msg: TicketChatMessage) => {
-              fetchedChats.push(msg);
-            });
-          }
-        });
-
-        setOrderRequests(fetchedRequests);
-        setTicketChats(fetchedChats);
-      }
-    } catch (err) {
-      console.error('Supabase sync error:', err);
-      setIsSupabaseConnected(false);
-    }
-  };
-
-  useEffect(() => {
-    syncSupabaseRequests();
-
-    // Setup Supabase Realtime Listener for Live Updates across devices
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      const channel = client
-        .channel('public:plugin_requests')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'plugin_requests' },
-          () => {
-            syncSupabaseRequests();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        client.removeChannel(channel);
-      };
-    }
-  }, [supabaseUrl, supabaseAnonKey]);
-
-  // Sync state to local storage fallback
+  // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('zyt_cms_sections', JSON.stringify(cmsSections));
   }, [cmsSections]);
@@ -545,39 +332,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('zyt_services', JSON.stringify(services));
   }, [services]);
-
-  useEffect(() => {
-    localStorage.setItem('zyt_reviews', JSON.stringify(reviews));
-  }, [reviews]);
-
-  useEffect(() => {
-    localStorage.setItem('zyt_order_requests', JSON.stringify(orderRequests));
-  }, [orderRequests]);
-
-  useEffect(() => {
-    localStorage.setItem('zyt_request_chats', JSON.stringify(ticketChats));
-  }, [ticketChats]);
-
-  const setSupabaseConfig = (url: string, key: string) => {
-    setSupabaseUrlState(url);
-    setSupabaseAnonKeyState(key);
-    localStorage.setItem('zyt_supabase_url', url);
-    localStorage.setItem('zyt_supabase_key', key);
-  };
-
-  // Security Helper: Filter Requests based on Role & Ticket Ownership
-  const getUserRequests = (): OrderRequest[] => {
-    if (isAdmin) {
-      return orderRequests;
-    }
-    return orderRequests.filter((req) => req.ownerId === clientOwnerId);
-  };
-
-  const canAccessTicket = (requestId: string): boolean => {
-    if (isAdmin) return true;
-    const req = orderRequests.find((r) => r.id === requestId);
-    return !!req && req.ownerId === clientOwnerId;
-  };
 
   // Auth & Roles
   const loginRole = (pin: string) => {
@@ -727,238 +481,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setServices((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Order Requests Platform Actions (Synced with Supabase DB)
-  const addOrderRequest = async (reqData: Omit<OrderRequest, 'ownerId' | 'status' | 'createdAt'>): Promise<OrderRequest> => {
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    const newRequest: OrderRequest = {
-      ...reqData,
-      ownerId: clientOwnerId,
-      status: 'Pending',
-      progressNotes: ['Ticket created & queued for developer review'],
-      createdAt: formattedDate,
-    };
-
-    const initialSysMsg: TicketChatMessage = {
-      id: 'msg_' + Date.now(),
-      requestId: newRequest.id,
-      sender: 'Admin',
-      senderName: 'Zyt Studio Dispatcher',
-      text: `Hello ${newRequest.name}! Your ticket #${newRequest.id} has been logged in Pending status. Join our Discord server for instant assistance!`,
-      timestamp: 'Just Now',
-    };
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      try {
-        await client.from('plugin_requests').insert({
-          ticket_id: newRequest.id,
-          owner_id: newRequest.ownerId,
-          client_name: newRequest.name,
-          discord: newRequest.discord,
-          email: newRequest.email,
-          server_name: newRequest.serverName || 'N/A',
-          currency: newRequest.currency,
-          budget_min: newRequest.budgetMin,
-          budget_max: newRequest.budgetMax,
-          budget_formatted: newRequest.budgetFormatted,
-          deadline: newRequest.deadline,
-          plugin_description: newRequest.pluginIdea,
-          status: 'Pending',
-          progress_notes: newRequest.progressNotes,
-          messages: [initialSysMsg],
-        });
-      } catch (err) {
-        console.error('Failed to insert request to Supabase:', err);
-      }
-    }
-
-    setOrderRequests((prev) => [newRequest, ...prev]);
-    setTicketChats((prev) => [...prev, initialSysMsg]);
-    return newRequest;
-  };
-
-  const updateRequestStatus = async (id: string, status: RequestStatus) => {
-    setOrderRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
-
-    const statusMsg: TicketChatMessage = {
-      id: 'msg_' + Date.now(),
-      requestId: id,
-      sender: 'Admin',
-      senderName: 'Zyt Studio System',
-      text: `🔔 Request Status Updated: ${status.toUpperCase()}`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setTicketChats((prev) => [...prev, statusMsg]);
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      try {
-        const { data: row } = await client.from('plugin_requests').select('messages').eq('ticket_id', id).single();
-        const updatedMsgs = row && Array.isArray(row.messages) ? [...row.messages, statusMsg] : [statusMsg];
-
-        await client.from('plugin_requests').update({
-          status,
-          messages: updatedMsgs,
-        }).eq('ticket_id', id);
-      } catch (err) {
-        console.error('Supabase update status error:', err);
-      }
-    }
-  };
-
-  const addProgressNote = async (id: string, note: string) => {
-    let updatedNotes: string[] = [];
-    setOrderRequests((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          updatedNotes = [...(r.progressNotes || []), note];
-          return { ...r, progressNotes: updatedNotes };
-        }
-        return r;
-      })
-    );
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      try {
-        await client.from('plugin_requests').update({
-          progress_notes: updatedNotes,
-        }).eq('ticket_id', id);
-      } catch (err) {
-        console.error('Supabase add note error:', err);
-      }
-    }
-  };
-
-  const deleteOrderRequest = async (id: string) => {
-    setOrderRequests((prev) => prev.filter((r) => r.id !== id));
-    setTicketChats((prev) => prev.filter((c) => c.requestId !== id));
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      try {
-        await client.from('plugin_requests').delete().eq('ticket_id', id);
-      } catch (err) {
-        console.error('Supabase delete ticket error:', err);
-      }
-    }
-  };
-
-  const addChatMessage = async (msgData: Omit<TicketChatMessage, 'id' | 'timestamp'>) => {
-    if (!canAccessTicket(msgData.requestId)) {
-      console.warn('Access Denied: Cannot post in a ticket you do not own.');
-      return;
-    }
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const newMsg: TicketChatMessage = {
-      ...msgData,
-      id: 'msg_' + Date.now(),
-      timestamp: timeStr,
-    };
-
-    setTicketChats((prev) => [...prev, newMsg]);
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey);
-    if (client) {
-      try {
-        const { data: row } = await client.from('plugin_requests').select('messages').eq('ticket_id', msgData.requestId).single();
-        const existingMsgs = row && Array.isArray(row.messages) ? row.messages : [];
-        await client.from('plugin_requests').update({
-          messages: [...existingMsgs, newMsg],
-        }).eq('ticket_id', msgData.requestId);
-      } catch (err) {
-        console.error('Supabase send chat message error:', err);
-      }
-    }
-  };
-
-  // Reviews Actions
-  const addReview = (reviewData: Omit<ExtendedReviewItem, 'id'>) => {
-    const newRev: ExtendedReviewItem = {
-      ...reviewData,
-      id: 'rev_' + Date.now(),
-    };
-    setReviews((prev) => [newRev, ...prev]);
-  };
-
-  const submitReview = (data: { author: string; discord: string; rating: number; quote: string }) => {
-    const duplicate = reviews.find(
-      (r) => r.discord?.toLowerCase() === data.discord.toLowerCase() && r.quote === data.quote
-    );
-    if (duplicate) {
-      return { success: false, message: 'Duplicate review detected. You have already submitted this review.' };
-    }
-
-    const newRev: ExtendedReviewItem = {
-      id: 'rev_' + Date.now(),
-      rating: data.rating,
-      quote: data.quote,
-      author: data.author,
-      role: 'Community Member',
-      serverName: 'Minecraft Server',
-      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.author)}`,
-      verifiedOrder: 'Custom Plugin Order',
-      date: 'Just Now',
-      status: 'pending',
-      pinned: false,
-      hidden: false,
-      discord: data.discord,
-    };
-
-    setReviews((prev) => [newRev, ...prev]);
-    return { success: true, message: 'Review submitted successfully! Pending admin approval.' };
-  };
-
-  const approveReview = (id: string) => {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'approved' } : r)));
-  };
-
-  const rejectReview = (id: string) => {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'rejected' } : r)));
-  };
-
-  const deleteReview = (id: string) => {
-    setReviews((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const pinReview = (id: string) => {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, pinned: !r.pinned } : r)));
-  };
-
-  const toggleHideReview = (id: string) => {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, hidden: !r.hidden } : r)));
-  };
-
-  const updateReview = (review: ExtendedReviewItem) => {
-    setReviews((prev) => prev.map((r) => (r.id === review.id ? review : r)));
-  };
-
   // Backup Export & Import
   const exportCMSBackup = (): string => {
     const backupObj = {
-      version: '5.0',
+      version: '7.0',
       exportDate: new Date().toISOString(),
       cmsSections,
       themeConfig,
       plugins,
       portfolio,
       services,
-      reviews,
       mediaLibrary,
-      orderRequests,
-      ticketChats,
     };
     return JSON.stringify(backupObj, null, 2);
   };
@@ -974,10 +507,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (data.plugins) setPlugins(data.plugins);
       if (data.portfolio) setPortfolio(data.portfolio);
       if (data.services) setServices(data.services);
-      if (data.reviews) setReviews(data.reviews);
       if (data.mediaLibrary) setMediaLibrary(data.mediaLibrary);
-      if (data.orderRequests) setOrderRequests(data.orderRequests);
-      if (data.ticketChats) setTicketChats(data.ticketChats);
 
       return { success: true, message: 'Backup JSON imported successfully!' };
     } catch (err) {
@@ -992,17 +522,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPlugins(PLUGINS_DATA);
     setPortfolio(PORTFOLIO_PROJECTS);
     setServices(SERVICES_DATA);
-    setReviews(
-      REVIEWS_DATA.map((r) => ({
-        ...r,
-        status: 'approved' as const,
-        pinned: r.id === '1',
-        hidden: false,
-        discord: '@client_user',
-      }))
-    );
-    setOrderRequests([]);
-    setTicketChats([]);
   };
 
   return (
@@ -1034,18 +553,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         mediaLibrary,
         plugins,
         portfolio,
-        reviews,
         services,
-        orderRequests,
-        ticketChats,
-        supabaseUrl,
-        supabaseAnonKey,
-        isSupabaseConnected,
-        setSupabaseConfig,
-        syncSupabaseRequests,
-        clientOwnerId,
-        getUserRequests,
-        canAccessTicket,
         isAdmin,
         adminRole,
         adminPin,
@@ -1079,19 +587,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addService,
         updateService,
         deleteService,
-        addOrderRequest,
-        updateRequestStatus,
-        addProgressNote,
-        deleteOrderRequest,
-        addChatMessage,
-        addReview,
-        submitReview,
-        approveReview,
-        rejectReview,
-        deleteReview,
-        pinReview,
-        toggleHideReview,
-        updateReview,
         exportCMSBackup,
         importCMSBackup,
         resetAllCMS,

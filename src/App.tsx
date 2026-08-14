@@ -9,32 +9,25 @@ import { PluginModal } from './components/PluginModal';
 import { PortfolioSection } from './components/PortfolioSection';
 import { ServicesSection } from './components/ServicesSection';
 import { WhyChooseUs } from './components/WhyChooseUs';
-import { Testimonials } from './components/Testimonials';
 import { OrderSection } from './components/OrderSection';
 import { PaymentSection } from './components/PaymentSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminCMS } from './components/AdminCMS';
 import { FloatingAdminBar } from './components/FloatingAdminBar';
-import { RequestsPortalModal } from './components/RequestsPortalModal';
 import { ToastNotification } from './components/ToastNotification';
 import type { PluginItem } from './data/pluginsData';
 
 function AppContent() {
   const [selectedPlugin, setSelectedPlugin] = useState<PluginItem | null>(null);
-  const [orderInitialPlugin, setOrderInitialPlugin] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [cmsOpen, setCmsOpen] = useState(false);
-  const [requestsPortalOpen, setRequestsPortalOpen] = useState(false);
 
-  // Check URL hash for #admin, /admin, or #requests
+  // Check URL hash for #admin or /admin
   useEffect(() => {
     const handleHashCheck = () => {
       if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
         setCmsOpen(true);
-      }
-      if (window.location.hash === '#requests' || window.location.pathname === '/requests') {
-        setRequestsPortalOpen(true);
       }
     };
     handleHashCheck();
@@ -49,10 +42,7 @@ function AppContent() {
     }, 4000);
   };
 
-  const scrollToOrder = (pluginName?: string) => {
-    if (pluginName) {
-      setOrderInitialPlugin(pluginName);
-    }
+  const scrollToOrder = () => {
     const orderElem = document.getElementById('order');
     if (orderElem) {
       orderElem.scrollIntoView({ behavior: 'smooth' });
@@ -78,7 +68,6 @@ function AppContent() {
       <Navbar
         onOrderClick={() => scrollToOrder()}
         onOpenAdmin={() => setCmsOpen(true)}
-        onOpenRequestsPortal={() => setRequestsPortalOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -90,24 +79,18 @@ function AppContent() {
 
         <FeaturedPlugins
           onSelectPlugin={(plugin) => setSelectedPlugin(plugin)}
-          onOrderCustom={(name) => scrollToOrder(name)}
+          onOrderCustom={() => scrollToOrder()}
         />
 
         <PortfolioSection onOrderClick={() => scrollToOrder()} />
 
         <ServicesSection
-          onSelectService={(serviceTitle) => scrollToOrder(`Service: ${serviceTitle}`)}
+          onSelectService={() => scrollToOrder()}
         />
 
         <WhyChooseUs />
 
-        <Testimonials />
-
-        <OrderSection
-          initialPluginName={orderInitialPlugin}
-          onTriggerToast={triggerToast}
-          onOpenRequestsPortal={() => setRequestsPortalOpen(true)}
-        />
+        <OrderSection />
 
         <PaymentSection onTriggerToast={triggerToast} />
 
@@ -123,13 +106,6 @@ function AppContent() {
         onTriggerToast={triggerToast}
       />
 
-      {/* Client Requests & Ticket Chat Portal Modal */}
-      <RequestsPortalModal
-        isOpen={requestsPortalOpen}
-        onClose={() => setRequestsPortalOpen(false)}
-        onTriggerToast={triggerToast}
-      />
-
       {/* WordPress-Style Full Site CMS Panel */}
       <AdminCMS
         isOpen={cmsOpen}
@@ -141,7 +117,7 @@ function AppContent() {
       <PluginModal
         plugin={selectedPlugin}
         onClose={() => setSelectedPlugin(null)}
-        onOrderCustom={(name) => scrollToOrder(name)}
+        onOrderCustom={() => scrollToOrder()}
         onTriggerToast={triggerToast}
       />
 

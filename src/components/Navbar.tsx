@@ -1,39 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
-import { Sparkles, Menu, X, ArrowRight, Lock, Ticket } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, Lock, Disc as DiscordIcon } from 'lucide-react';
 
 interface NavbarProps {
   onOrderClick: () => void;
   onOpenAdmin: () => void;
-  onOpenRequestsPortal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  onOrderClick,
-  onOpenAdmin,
-  onOpenRequestsPortal,
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => {
   const store = useStore();
   const cmsNavbar = store?.cmsSections?.navbar;
+  const contact = store?.cmsSections?.contact;
   const isAdmin = store?.isAdmin || false;
-  const orderRequests = store?.orderRequests || [];
-
-  const pendingCount = orderRequests.filter((r) => r.status === 'Pending').length;
 
   const brandName = cmsNavbar?.brandName || 'ZYT';
   const brandTagline = cmsNavbar?.brandTagline || 'STUDIO';
   const logoUrl = cmsNavbar?.logoUrl || '/zyt_mascot.jpg';
   const orderBtnText = cmsNavbar?.orderBtnText || 'Order Plugin';
+  const discordInvite = contact?.discordInvite || 'https://discord.gg';
+
   const links = cmsNavbar?.links || [
     { name: 'Home', href: '#hero' },
     { name: 'Plugins', href: '#plugins' },
     { name: 'Portfolio', href: '#portfolio' },
     { name: 'Services', href: '#services' },
     { name: 'Why Us', href: '#why-us' },
-    { name: 'Reviews', href: '#reviews' },
     { name: 'Payment', href: '#payment' },
     { name: 'Contact', href: '#contact' },
-    { name: 'Requests', href: '#requests' },
   ];
 
   const [scrolled, setScrolled] = useState(false);
@@ -87,47 +80,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-1 glass-panel px-4 py-1.5 rounded-full border border-white/10">
-          {links.map((link) => {
-            if (link.name === 'Requests') {
-              return (
-                <button
-                  key={link.name}
-                  onClick={() => onOpenRequestsPortal?.()}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-cyan-300 hover:text-white hover:bg-cyan-950/40 rounded-full transition-all duration-200 flex items-center gap-1.5 relative font-mono"
-                >
-                  <Ticket className="w-3.5 h-3.5 text-cyan-400" />
-                  Requests
-                  {pendingCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black animate-pulse">
-                      {pendingCount}
-                    </span>
-                  )}
-                </button>
-              );
-            }
-
-            return (
-              <a
-                key={link.name}
-                href={link.href}
-                className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
-              >
-                {link.name}
-              </a>
-            );
-          })}
+          {links.map((link) => (
+            <a
+              key={link.name}
+              href={link.href}
+              className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
+            >
+              {link.name}
+            </a>
+          ))}
         </nav>
 
         {/* Action Buttons */}
         <div className="hidden lg:flex items-center gap-3">
-          <button
-            onClick={() => onOpenRequestsPortal?.()}
-            className="px-3 py-2 rounded-xl bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/40 text-cyan-300 text-xs font-mono font-semibold flex items-center gap-1.5"
-            title="Open Client Requests Portal"
+          <a
+            href={discordInvite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-800/50 text-indigo-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
           >
-            <Ticket className="w-3.5 h-3.5 text-cyan-400" />
-            Requests ({orderRequests.length})
-          </button>
+            <DiscordIcon className="w-3.5 h-3.5 text-indigo-400" />
+            Discord
+          </a>
 
           <button
             onClick={onOpenAdmin}
@@ -181,16 +155,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileOpen(false);
-                onOpenRequestsPortal?.();
-              }}
-              className="w-full py-2.5 px-4 rounded-xl bg-cyan-950/60 text-cyan-300 text-xs font-mono font-semibold flex items-center justify-center gap-2"
+            <a
+              href={discordInvite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 rounded-xl bg-indigo-950/80 text-indigo-200 text-xs font-mono font-bold flex items-center justify-center gap-2"
             >
-              <Ticket className="w-4 h-4 text-cyan-400" />
-              Requests Portal ({orderRequests.length})
-            </button>
+              <DiscordIcon className="w-4 h-4 text-indigo-400" />
+              Join Discord Server
+            </a>
 
             <button
               onClick={() => {

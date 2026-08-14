@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import type { PluginItem } from '../data/pluginsData';
-import { X, CheckCircle2, ShieldCheck, Terminal, Copy, Check, Download, Zap, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, ShieldCheck, Copy, Check, Zap, Sparkles } from 'lucide-react';
 
 interface PluginModalProps {
   plugin: PluginItem | null;
   onClose: () => void;
-  onOrderCustom: (pluginName: string) => void;
+  onOrderCustom: () => void;
   onTriggerToast: (msg: string) => void;
 }
 
@@ -193,12 +193,12 @@ export const PluginModal: React.FC<PluginModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onOrderCustom(plugin.name);
+                onOrderCustom();
               }}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all flex items-center justify-center gap-2"
             >
               <Zap className="w-4 h-4 text-cyan-300" />
-              Get License ({plugin.price})
+              Order Plugin ({plugin.price})
             </button>
           </div>
         </div>
