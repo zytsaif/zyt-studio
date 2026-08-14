@@ -9,7 +9,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => {
-  const { websiteSettings, contactSettings } = useStore();
+  const { cmsSections } = useStore();
 
   const stats = [
     { label: 'Plugins Created', value: '50+', icon: Code, color: 'text-purple-400' },
@@ -26,7 +26,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
       <div className="absolute bottom-10 right-1/4 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
-        {/* Top Mascot Hero Display Banner */}
+        {/* Top Mascot Display */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -35,7 +35,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <div className="relative w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-3xl p-[2px] bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 shadow-2xl shadow-purple-600/30">
             <img
-              src={websiteSettings.mascotUrl}
+              src={cmsSections.hero.mascotUrl}
               alt="Zyt Studio 3D Mascot"
               className="w-full h-full object-cover rounded-[22px] border border-white/20 animate-mascot-glow"
             />
@@ -54,7 +54,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Next-Gen Minecraft Studio & Paper/Spigot Architecture</span>
+          <span>{cmsSections.hero.badgeText}</span>
         </motion.div>
 
         {/* Main Heading */}
@@ -64,10 +64,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]"
         >
-          Professional{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-purple-400 to-cyan-400 text-glow-purple">
-            {websiteSettings.heroTitle}
-          </span>
+          {cmsSections.hero.title}
         </motion.h1>
 
         {/* Sub Heading */}
@@ -77,49 +74,46 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-6 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-normal leading-relaxed"
         >
-          {websiteSettings.heroSubheading}
+          {cmsSections.hero.description}
         </motion.p>
 
-        {/* Call-to-Action Buttons */}
+        {/* Action Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-5"
         >
-          {/* View Portfolio */}
           <button
             onClick={onViewWorkClick}
             className="px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs backdrop-blur-md transition-all hover:border-purple-400/50 flex items-center justify-center gap-2 group shadow-lg"
           >
             <Layers className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-            View Portfolio
+            {cmsSections.hero.secondaryBtnText}
           </button>
 
-          {/* Order Custom Plugin */}
           <button
             onClick={onOrderClick}
             className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4 text-cyan-300" />
-            Order Custom Plugin
+            {cmsSections.hero.primaryBtnText}
             <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
           </button>
 
-          {/* Join Discord */}
           <a
-            href={contactSettings.discordInvite}
+            href={cmsSections.contact.discordInvite}
             target="_blank"
             rel="noopener noreferrer"
             className="px-7 py-3.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
           >
             <MessageSquare className="w-4 h-4 text-indigo-400" />
-            Join Discord
+            {cmsSections.hero.discordBtnText}
             <ExternalLink className="w-3.5 h-3.5 opacity-70" />
           </a>
         </motion.div>
 
-        {/* Animated Plugin Diagnostic Box */}
+        {/* Plugin Diagnostic Terminal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}

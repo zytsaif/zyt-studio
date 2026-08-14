@@ -14,7 +14,7 @@ import { OrderSection } from './components/OrderSection';
 import { PaymentSection } from './components/PaymentSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
-import { AdminDashboard } from './components/AdminDashboard';
+import { AdminCMS } from './components/AdminCMS';
 import { ToastNotification } from './components/ToastNotification';
 import type { PluginItem } from './data/pluginsData';
 
@@ -22,13 +22,13 @@ function AppContent() {
   const [selectedPlugin, setSelectedPlugin] = useState<PluginItem | null>(null);
   const [orderInitialPlugin, setOrderInitialPlugin] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [cmsOpen, setCmsOpen] = useState(false);
 
   // Check URL hash for #admin or /admin
   useEffect(() => {
     const handleHashCheck = () => {
       if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
-        setAdminOpen(true);
+        setCmsOpen(true);
       }
     };
     handleHashCheck();
@@ -62,19 +62,19 @@ function AppContent() {
 
   return (
     <div className="relative min-h-screen bg-[#05050a] text-gray-100 overflow-hidden font-sans selection:bg-purple-500 selection:text-white">
-      {/* Dynamic 3D Mascot Loading Screen */}
+      {/* 3D Mascot Loading Screen */}
       <LoadingScreen />
 
-      {/* Particle & Isometric Floating Cube Backdrop */}
+      {/* Particle & Floating Cube Backdrop */}
       <ParticleBackground />
 
-      {/* Navigation Header with 3D Mascot */}
+      {/* Navigation Header */}
       <Navbar
         onOrderClick={() => scrollToOrder()}
-        onOpenAdmin={() => setAdminOpen(true)}
+        onOpenAdmin={() => setCmsOpen(true)}
       />
 
-      {/* Main Page Sections */}
+      {/* Main Page Content */}
       <main className="relative z-10 space-y-0">
         <Hero
           onOrderClick={() => scrollToOrder()}
@@ -107,16 +107,16 @@ function AppContent() {
       </main>
 
       {/* Footer */}
-      <Footer onOpenAdmin={() => setAdminOpen(true)} />
+      <Footer onOpenAdmin={() => setCmsOpen(true)} />
 
-      {/* Admin Dashboard Modal */}
-      <AdminDashboard
-        isOpen={adminOpen}
-        onClose={() => setAdminOpen(false)}
+      {/* WordPress-Style Full Site CMS Panel */}
+      <AdminCMS
+        isOpen={cmsOpen}
+        onClose={() => setCmsOpen(false)}
         onTriggerToast={triggerToast}
       />
 
-      {/* Plugin Details Modal */}
+      {/* Plugin Specs Modal */}
       <PluginModal
         plugin={selectedPlugin}
         onClose={() => setSelectedPlugin(null)}
