@@ -16,12 +16,27 @@ import { Footer } from './components/Footer';
 import { AdminCMS } from './components/AdminCMS';
 import { FloatingAdminBar } from './components/FloatingAdminBar';
 import { ToastNotification } from './components/ToastNotification';
+import { MinecraftAdvancementToast } from './components/MinecraftAdvancementToast';
+import type { AdvancementItem } from './components/MinecraftAdvancementToast';
 import type { PluginItem } from './data/pluginsData';
 
 function AppContent() {
   const [selectedPlugin, setSelectedPlugin] = useState<PluginItem | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [cmsOpen, setCmsOpen] = useState(false);
+  const [advancement, setAdvancement] = useState<AdvancementItem | null>(null);
+
+  // Trigger initial Advancement Popup after initial load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      triggerAdvancement(
+        'Studio Explorer',
+        'Welcome to Zyt Studio - Next-Gen Minecraft Studio',
+        'trophy'
+      );
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check URL hash for #admin or /admin
   useEffect(() => {
@@ -40,6 +55,23 @@ function AppContent() {
     setTimeout(() => {
       setToastMessage((current) => (current === msg ? null : current));
     }, 4000);
+  };
+
+  const triggerAdvancement = (
+    title: string,
+    description: string,
+    icon: 'trophy' | 'diamond' | 'discord' | 'shield' = 'trophy'
+  ) => {
+    const newAdv: AdvancementItem = {
+      id: 'adv_' + Date.now(),
+      title,
+      description,
+      icon,
+    };
+    setAdvancement(newAdv);
+    setTimeout(() => {
+      setAdvancement((curr) => (curr?.id === newAdv.id ? null : curr));
+    }, 4500);
   };
 
   const scrollToOrder = () => {
@@ -64,6 +96,12 @@ function AppContent() {
       {/* Particle & Floating Cube Backdrop */}
       <ParticleBackground />
 
+      {/* Minecraft Advancement Popup Notification */}
+      <MinecraftAdvancementToast
+        advancement={advancement}
+        onClose={() => setAdvancement(null)}
+      />
+
       {/* Navigation Header */}
       <Navbar
         onOrderClick={() => scrollToOrder()}
@@ -78,7 +116,10 @@ function AppContent() {
         />
 
         <FeaturedPlugins
-          onSelectPlugin={(plugin) => setSelectedPlugin(plugin)}
+          onSelectPlugin={(plugin) => {
+            setSelectedPlugin(plugin);
+            triggerAdvancement('Plugin Inspection', `Inspecting ${plugin.name} specs!`, 'diamond');
+          }}
           onOrderCustom={() => scrollToOrder()}
         />
 
@@ -90,7 +131,9 @@ function AppContent() {
 
         <WhyChooseUs />
 
-        <OrderSection />
+        <OrderSection
+          onTriggerAdvancement={triggerAdvancement}
+        />
 
         <PaymentSection onTriggerToast={triggerToast} />
 

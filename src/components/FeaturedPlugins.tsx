@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
 import type { PluginItem } from '../data/pluginsData';
 import { InlineEditableText } from './InlineEditableText';
-import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Eye, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Eye, Plus, Trash2, ArrowUp, ArrowDown, Award } from 'lucide-react';
 
 interface FeaturedPluginsProps {
   onSelectPlugin: (plugin: PluginItem) => void;
@@ -34,6 +34,40 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
       case 'ShieldCheck': return ShieldCheck;
       default: return Sparkles;
     }
+  };
+
+  const getRarityInfo = (plg: PluginItem) => {
+    const priceNum = parseFloat(plg.price.replace(/[^0-9.]/g, '')) || 0;
+    if (plg.name.includes('Mocap') || priceNum >= 35) {
+      return {
+        tier: 'LEGENDARY',
+        badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/60 shadow-amber-500/20',
+        cardGlow: 'hover:border-amber-500/70 hover:shadow-amber-500/25',
+        iconBg: 'bg-amber-950/50 border-amber-500/40 text-amber-400',
+      };
+    }
+    if (priceNum >= 20 || plg.name.includes('Economy')) {
+      return {
+        tier: 'EPIC',
+        badgeClass: 'bg-purple-950/90 text-purple-300 border-purple-500/60 shadow-purple-500/20',
+        cardGlow: 'hover:border-purple-500/70 hover:shadow-purple-500/25',
+        iconBg: 'bg-purple-950/50 border-purple-500/40 text-purple-400',
+      };
+    }
+    if (priceNum >= 10 || plg.name.includes('Kits')) {
+      return {
+        tier: 'RARE',
+        badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-500/60 shadow-cyan-500/20',
+        cardGlow: 'hover:border-cyan-500/70 hover:shadow-cyan-500/25',
+        iconBg: 'bg-cyan-950/50 border-cyan-500/40 text-cyan-400',
+      };
+    }
+    return {
+      tier: 'COMMON',
+      badgeClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60 shadow-emerald-500/20',
+      cardGlow: 'hover:border-emerald-500/70 hover:shadow-emerald-500/25',
+      iconBg: 'bg-emerald-950/50 border-emerald-500/40 text-emerald-400',
+    };
   };
 
   const movePlugin = (index: number, direction: 'up' | 'down') => {
@@ -93,7 +127,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
       <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header with Fade Up Motion */}
+        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -141,7 +175,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
           </div>
         </motion.div>
 
-        {/* Plugin Cards Staggered Grid */}
+        {/* Plugin Cards Staggered Grid with Rarity System */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -152,6 +186,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
           <AnimatePresence mode="popLayout">
             {filteredPlugins.map((plugin, idx) => {
               const IconComponent = getIcon(plugin.iconName);
+              const rarity = getRarityInfo(plugin);
 
               return (
                 <motion.div
@@ -160,7 +195,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                   variants={cardVariants}
                   whileHover={{ y: -8, scale: 1.015 }}
                   transition={{ duration: 0.3 }}
-                  className="glass-card rounded-3xl p-8 flex flex-col justify-between border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-purple-600/25 relative"
+                  className={`glass-card rounded-3xl p-8 flex flex-col justify-between border border-white/10 transition-all duration-300 group hover:shadow-2xl relative ${rarity.cardGlow}`}
                 >
                   {/* Visual Admin Controls on Card */}
                   {isEditMode && (
@@ -192,18 +227,25 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                   )}
 
                   <div>
-                    {/* Top Badge & Price */}
+                    {/* Top Rarity Badge & Price */}
                     <div className="flex items-center justify-between mb-6">
-                      <div className="w-13 h-13 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-purple-400 transition-all shadow-md">
-                        <IconComponent className="w-6 h-6 text-purple-400" />
+                      <div className={`w-13 h-13 rounded-2xl border flex items-center justify-center group-hover:scale-110 transition-all shadow-md ${rarity.iconBg}`}>
+                        <IconComponent className="w-6 h-6" />
                       </div>
 
-                      <span className="px-3.5 py-1.5 rounded-full text-xs font-extrabold font-mono bg-purple-950/90 text-cyan-300 border border-purple-500/40 shadow-lg">
-                        <InlineEditableText
-                          value={plugin.price}
-                          onSave={(val) => updatePlugin({ ...plugin, price: val })}
-                        />
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {/* Minecraft Plugin Rarity Pill */}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold font-mono uppercase tracking-wider border shadow-md flex items-center gap-1 ${rarity.badgeClass}`}>
+                          <Award className="w-3 h-3" /> {rarity.tier}
+                        </span>
+
+                        <span className="px-3.5 py-1.5 rounded-full text-xs font-extrabold font-mono bg-purple-950/90 text-cyan-300 border border-purple-500/40 shadow-lg">
+                          <InlineEditableText
+                            value={plugin.price}
+                            onSave={(val) => updatePlugin({ ...plugin, price: val })}
+                          />
+                        </span>
+                      </div>
                     </div>
 
                     {/* Plugin Name */}

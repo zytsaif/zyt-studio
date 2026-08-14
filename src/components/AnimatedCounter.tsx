@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useInView, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 
 interface AnimatedCounterProps {
   value: string; // e.g. "50+", "100+", "5+", "24/7"
@@ -33,25 +33,14 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     }
   }, [isInView, numericTarget, count, duration]);
 
-  useEffect(() => {
-    if (numericTarget === null && ref.current) {
-      ref.current.textContent = value;
-    }
-  }, [value, numericTarget]);
-
   if (numericTarget === null) {
     return <span className={className}>{value}</span>;
   }
 
   return (
     <span ref={ref} className={className}>
-      <motionSpan>{rounded}</motionSpan>
+      <motion.span>{rounded}</motion.span>
       {suffix}
     </span>
   );
-};
-
-// Helper sub-component to render motion value in DOM
-const motionSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <>{children}</>;
 };
