@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
-import { Sparkles, Menu, X, ArrowRight, Lock } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, Lock, Ticket } from 'lucide-react';
 
 interface NavbarProps {
   onOrderClick: () => void;
   onOpenAdmin: () => void;
+  onOpenRequestsPortal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onOrderClick,
+  onOpenAdmin,
+  onOpenRequestsPortal,
+}) => {
   const store = useStore();
   const cmsNavbar = store?.cmsSections?.navbar;
   const isAdmin = store?.isAdmin || false;
+  const orderRequests = store?.orderRequests || [];
+
+  const pendingCount = orderRequests.filter((r) => r.status === 'Pending').length;
 
   const brandName = cmsNavbar?.brandName || 'ZYT';
   const brandTagline = cmsNavbar?.brandTagline || 'STUDIO';
@@ -25,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
     { name: 'Reviews', href: '#reviews' },
     { name: 'Payment', href: '#payment' },
     { name: 'Contact', href: '#contact' },
+    { name: 'Requests', href: '#requests' },
   ];
 
   const [scrolled, setScrolled] = useState(false);
@@ -78,19 +87,48 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-1 glass-panel px-4 py-1.5 rounded-full border border-white/10">
-          {links.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
-            >
-              {link.name}
-            </a>
-          ))}
+          {links.map((link) => {
+            if (link.name === 'Requests') {
+              return (
+                <button
+                  key={link.name}
+                  onClick={() => onOpenRequestsPortal?.()}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-cyan-300 hover:text-white hover:bg-cyan-950/40 rounded-full transition-all duration-200 flex items-center gap-1.5 relative font-mono"
+                >
+                  <Ticket className="w-3.5 h-3.5 text-cyan-400" />
+                  Requests
+                  {pendingCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black animate-pulse">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+            }
+
+            return (
+              <a
+                key={link.name}
+                href={link.href}
+                className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
+              >
+                {link.name}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Action Buttons */}
         <div className="hidden lg:flex items-center gap-3">
+          <button
+            onClick={() => onOpenRequestsPortal?.()}
+            className="px-3 py-2 rounded-xl bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/40 text-cyan-300 text-xs font-mono font-semibold flex items-center gap-1.5"
+            title="Open Client Requests Portal"
+          >
+            <Ticket className="w-3.5 h-3.5 text-cyan-400" />
+            Requests ({orderRequests.length})
+          </button>
+
           <button
             onClick={onOpenAdmin}
             className={`p-2.5 rounded-xl border text-xs font-mono font-semibold flex items-center gap-1.5 transition-all ${
@@ -143,6 +181,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
           </div>
 
           <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                onOpenRequestsPortal?.();
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-cyan-950/60 text-cyan-300 text-xs font-mono font-semibold flex items-center justify-center gap-2"
+            >
+              <Ticket className="w-4 h-4 text-cyan-400" />
+              Requests Portal ({orderRequests.length})
+            </button>
+
             <button
               onClick={() => {
                 setMobileOpen(false);

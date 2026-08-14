@@ -32,6 +32,33 @@ export interface MediaItem {
   date: string;
 }
 
+export type RequestStatus = 'Pending' | 'Accepted' | 'In Progress' | 'Completed' | 'Rejected';
+
+export interface OrderRequest {
+  id: string; // e.g. ZYT-849201
+  name: string;
+  email: string;
+  discord: string;
+  serverName?: string;
+  pluginIdea: string;
+  currency: 'INR' | 'USD';
+  budgetMin: string;
+  budgetMax: string;
+  budgetFormatted: string;
+  deadline: string;
+  status: RequestStatus;
+  createdAt: string;
+}
+
+export interface TicketChatMessage {
+  id: string;
+  requestId: string;
+  sender: 'Client' | 'Admin';
+  senderName: string;
+  text: string;
+  timestamp: string;
+}
+
 export interface CMSSections {
   navbar: {
     brandName: string;
@@ -112,6 +139,10 @@ interface StoreContextType {
   portfolio: PortfolioProject[];
   reviews: ExtendedReviewItem[];
   services: ServiceItem[];
+  orderRequests: OrderRequest[];
+  ticketChats: TicketChatMessage[];
+
+  // Admin Auth
   isAdmin: boolean;
   adminRole: AdminRole;
   adminPin: string;
@@ -175,6 +206,12 @@ interface StoreContextType {
   updateService: (service: ServiceItem) => void;
   deleteService: (id: string) => void;
 
+  // Order Requests & Ticket System
+  addOrderRequest: (req: Omit<OrderRequest, 'status' | 'createdAt'>) => OrderRequest;
+  updateRequestStatus: (id: string, status: RequestStatus) => void;
+  deleteOrderRequest: (id: string) => void;
+  addChatMessage: (msg: Omit<TicketChatMessage, 'id' | 'timestamp'>) => void;
+
   // Reviews CRUD
   addReview: (review: Omit<ExtendedReviewItem, 'id'>) => void;
   submitReview: (data: { author: string; discord: string; rating: number; quote: string }) => { success: boolean; message: string };
@@ -208,6 +245,7 @@ const DEFAULT_SECTIONS: CMSSections = {
       { name: 'Reviews', href: '#reviews' },
       { name: 'Payment', href: '#payment' },
       { name: 'Contact', href: '#contact' },
+      { name: 'Requests', href: '#requests' },
     ],
   },
   hero: {
@@ -350,6 +388,68 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   });
 
+  // Order Requests Platform State
+  const [orderRequests, setOrderRequests] = useState<OrderRequest[]>(() => {
+    const saved = localStorage.getItem('zyt_order_requests');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'ZYT-849201',
+        name: 'Alex Vance',
+        email: 'alex@playmine.net',
+        discord: 'alex_vance#1234',
+        serverName: 'PlayMine Network',
+        pluginIdea: 'Custom Lifesteal & Heart Economy Plugin with custom GUI & sub-tick combat tracking.',
+        currency: 'INR',
+        budgetMin: '2000',
+        budgetMax: '5000',
+        budgetFormatted: '₹2,000 - ₹5,000',
+        deadline: 'Within 1 Week',
+        status: 'In Progress',
+        createdAt: '2026-08-14 10:30 AM',
+      },
+      {
+        id: 'ZYT-612948',
+        name: 'Marcus Brody',
+        email: 'marcus@craftpvp.org',
+        discord: 'brody_pvp#0001',
+        serverName: 'CraftPVP',
+        pluginIdea: 'Folia compatible async chunk pre-generator & anti-exploit combat logging.',
+        currency: 'USD',
+        budgetMin: '150',
+        budgetMax: '350',
+        budgetFormatted: '$150 - $350',
+        deadline: 'Urgent (24 - 48 Hours)',
+        status: 'Pending',
+        createdAt: '2026-08-14 01:15 PM',
+      },
+    ];
+  });
+
+  // Ticket Chat System State
+  const [ticketChats, setTicketChats] = useState<TicketChatMessage[]>(() => {
+    const saved = localStorage.getItem('zyt_request_chats');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'c1',
+        requestId: 'ZYT-849201',
+        sender: 'Client',
+        senderName: 'Alex Vance',
+        text: 'Hello Zyt Studio! I submitted this Lifesteal request. When can we start?',
+        timestamp: '10:32 AM',
+      },
+      {
+        id: 'c2',
+        requestId: 'ZYT-849201',
+        sender: 'Admin',
+        senderName: 'Zyt Developer',
+        text: 'Hey Alex! Request accepted. We have begun development on Paper 1.20.6. I will post progress updates here!',
+        timestamp: '10:45 AM',
+      },
+    ];
+  });
+
   // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('zyt_cms_sections', JSON.stringify(cmsSections));
@@ -378,6 +478,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('zyt_reviews', JSON.stringify(reviews));
   }, [reviews]);
+
+  useEffect(() => {
+    localStorage.setItem('zyt_order_requests', JSON.stringify(orderRequests));
+  }, [orderRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('zyt_request_chats', JSON.stringify(ticketChats));
+  }, [ticketChats]);
 
   // Auth & Roles
   const loginRole = (pin: string) => {
@@ -424,7 +532,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const recordHistory = (newSections: CMSSections) => {
     setHistory((prev) => {
       const truncated = prev.slice(0, historyIndex + 1);
-      return [...truncated, newSections].slice(-20); // Keep last 20 steps
+      return [...truncated, newSections].slice(-20);
     });
     setHistoryIndex((prev) => Math.min(prev + 1, 19));
   };
@@ -527,6 +635,73 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setServices((prev) => prev.filter((s) => s.id !== id));
   };
 
+  // Order Requests Platform Actions
+  const addOrderRequest = (reqData: Omit<OrderRequest, 'status' | 'createdAt'>) => {
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const newRequest: OrderRequest = {
+      ...reqData,
+      status: 'Pending',
+      createdAt: formattedDate,
+    };
+
+    setOrderRequests((prev) => [newRequest, ...prev]);
+
+    // Initial system chat message
+    const initialSysMsg: TicketChatMessage = {
+      id: 'msg_' + Date.now(),
+      requestId: newRequest.id,
+      sender: 'Admin',
+      senderName: 'Zyt Studio Dispatcher',
+      text: `Hello ${newRequest.name}! Your ticket #${newRequest.id} has been logged in Pending status. Join our Discord server for instant assistance!`,
+      timestamp: 'Just Now',
+    };
+
+    setTicketChats((prev) => [...prev, initialSysMsg]);
+    return newRequest;
+  };
+
+  const updateRequestStatus = (id: string, status: RequestStatus) => {
+    setOrderRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+
+    // Post status update chat message
+    const statusMsg: TicketChatMessage = {
+      id: 'msg_' + Date.now(),
+      requestId: id,
+      sender: 'Admin',
+      senderName: 'Zyt Studio System',
+      text: `🔔 Request Status Updated: ${status.toUpperCase()}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setTicketChats((prev) => [...prev, statusMsg]);
+  };
+
+  const deleteOrderRequest = (id: string) => {
+    setOrderRequests((prev) => prev.filter((r) => r.id !== id));
+    setTicketChats((prev) => prev.filter((c) => c.requestId !== id));
+  };
+
+  const addChatMessage = (msgData: Omit<TicketChatMessage, 'id' | 'timestamp'>) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newMsg: TicketChatMessage = {
+      ...msgData,
+      id: 'msg_' + Date.now(),
+      timestamp: timeStr,
+    };
+
+    setTicketChats((prev) => [...prev, newMsg]);
+  };
+
   // Reviews Actions
   const addReview = (reviewData: Omit<ExtendedReviewItem, 'id'>) => {
     const newRev: ExtendedReviewItem = {
@@ -591,7 +766,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Backup Export & Import
   const exportCMSBackup = (): string => {
     const backupObj = {
-      version: '3.5',
+      version: '4.0',
       exportDate: new Date().toISOString(),
       cmsSections,
       themeConfig,
@@ -600,6 +775,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       services,
       reviews,
       mediaLibrary,
+      orderRequests,
+      ticketChats,
     };
     return JSON.stringify(backupObj, null, 2);
   };
@@ -617,6 +794,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (data.services) setServices(data.services);
       if (data.reviews) setReviews(data.reviews);
       if (data.mediaLibrary) setMediaLibrary(data.mediaLibrary);
+      if (data.orderRequests) setOrderRequests(data.orderRequests);
+      if (data.ticketChats) setTicketChats(data.ticketChats);
 
       return { success: true, message: 'Backup JSON imported successfully!' };
     } catch (err) {
@@ -673,6 +852,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         portfolio,
         reviews,
         services,
+        orderRequests,
+        ticketChats,
         isAdmin,
         adminRole,
         adminPin,
@@ -706,6 +887,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addService,
         updateService,
         deleteService,
+        addOrderRequest,
+        updateRequestStatus,
+        deleteOrderRequest,
+        addChatMessage,
         addReview,
         submitReview,
         approveReview,

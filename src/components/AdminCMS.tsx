@@ -53,6 +53,7 @@ interface AdminCMSProps {
 type TabType =
   | 'dashboard'
   | 'visual_editor'
+  | 'requests'
   | 'plugins'
   | 'portfolio'
   | 'services'
@@ -70,6 +71,9 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     portfolio,
     services,
     reviews,
+    orderRequests,
+    updateRequestStatus,
+    deleteOrderRequest,
     isAdmin,
     adminRole,
     adminPin,
@@ -333,6 +337,22 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
               </button>
 
               <button
+                onClick={() => { setActiveTab('requests'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                  activeTab === 'requests'
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <FileJson className="w-4 h-4 text-cyan-400" /> Requests & Tickets
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+                  {orderRequests.length}
+                </span>
+              </button>
+
+              <button
                 onClick={() => { setActiveTab('plugins'); setMobileSidebarOpen(false); }}
                 className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 transition-colors ${
                   activeTab === 'plugins'
@@ -571,6 +591,77 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                         {cmsSections[selectedSection]?.description || cmsSections[selectedSection]?.tagline}
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* REQUESTS & CLIENT TICKETS TAB */}
+              {activeTab === 'requests' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-white font-mono">Client Requests & Tickets</h3>
+                      <p className="text-xs text-gray-400">Manage client submissions, update status & monitor budget specs.</p>
+                    </div>
+                    <span className="text-xs text-cyan-400 font-mono font-bold">
+                      Total Requests: {orderRequests.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {orderRequests.length === 0 ? (
+                      <div className="text-center py-12 text-xs text-gray-400 glass-card rounded-2xl">
+                        No client requests submitted yet.
+                      </div>
+                    ) : (
+                      orderRequests.map((req) => (
+                        <div
+                          key={req.id}
+                          className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-cyan-400 font-mono">#{req.id}</span>
+                              <span className="text-xs font-bold text-white font-mono">{req.name}</span>
+                              <span className="text-xs text-indigo-300 font-mono">({req.discord})</span>
+                            </div>
+                            <p className="text-xs text-gray-300 line-clamp-1 font-sans">{req.pluginIdea}</p>
+                            <div className="flex items-center gap-4 text-[11px] font-mono text-gray-400 pt-1">
+                              <span>Budget: <strong className="text-emerald-400">{req.budgetFormatted}</strong></span>
+                              <span>Currency: <strong>{req.currency}</strong></span>
+                              <span>Date: <strong>{req.createdAt}</strong></span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            <select
+                              value={req.status}
+                              onChange={(e) => {
+                                updateRequestStatus(req.id, e.target.value as any);
+                                onTriggerToast(`Updated #${req.id} status to ${e.target.value}`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Accepted">Accepted</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Rejected">Rejected</option>
+                            </select>
+
+                            <button
+                              onClick={() => {
+                                deleteOrderRequest(req.id);
+                                onTriggerToast(`Deleted ticket #${req.id}`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 text-xs flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

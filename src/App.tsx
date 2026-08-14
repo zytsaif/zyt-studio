@@ -16,6 +16,7 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminCMS } from './components/AdminCMS';
 import { FloatingAdminBar } from './components/FloatingAdminBar';
+import { RequestsPortalModal } from './components/RequestsPortalModal';
 import { ToastNotification } from './components/ToastNotification';
 import type { PluginItem } from './data/pluginsData';
 
@@ -24,12 +25,16 @@ function AppContent() {
   const [orderInitialPlugin, setOrderInitialPlugin] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [cmsOpen, setCmsOpen] = useState(false);
+  const [requestsPortalOpen, setRequestsPortalOpen] = useState(false);
 
-  // Check URL hash for #admin or /admin
+  // Check URL hash for #admin, /admin, or #requests
   useEffect(() => {
     const handleHashCheck = () => {
       if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
         setCmsOpen(true);
+      }
+      if (window.location.hash === '#requests' || window.location.pathname === '/requests') {
+        setRequestsPortalOpen(true);
       }
     };
     handleHashCheck();
@@ -73,6 +78,7 @@ function AppContent() {
       <Navbar
         onOrderClick={() => scrollToOrder()}
         onOpenAdmin={() => setCmsOpen(true)}
+        onOpenRequestsPortal={() => setRequestsPortalOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -100,6 +106,7 @@ function AppContent() {
         <OrderSection
           initialPluginName={orderInitialPlugin}
           onTriggerToast={triggerToast}
+          onOpenRequestsPortal={() => setRequestsPortalOpen(true)}
         />
 
         <PaymentSection onTriggerToast={triggerToast} />
@@ -113,6 +120,13 @@ function AppContent() {
       {/* Floating Framer/Webflow Admin Control Toolbar */}
       <FloatingAdminBar
         onOpenFullCMS={() => setCmsOpen(true)}
+        onTriggerToast={triggerToast}
+      />
+
+      {/* Client Requests & Ticket Chat Portal Modal */}
+      <RequestsPortalModal
+        isOpen={requestsPortalOpen}
+        onClose={() => setRequestsPortalOpen(false)}
         onTriggerToast={triggerToast}
       />
 
