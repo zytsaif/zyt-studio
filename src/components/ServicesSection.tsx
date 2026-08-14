@@ -20,20 +20,21 @@ export const ServicesSection: React.FC<ServicesProps> = ({ onSelectService }) =>
   };
 
   return (
-    <section id="services" className="relative py-24 bg-[#05060e] z-10 border-t border-white/5">
-      {/* Glow Orbs */}
-      <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[140px] pointer-events-none" />
+    <section id="services" className="relative py-28 bg-[#05060e] z-10 border-t border-white/5 overflow-hidden">
+      {/* Ambient Glow Orbs */}
+      <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-10 right-1/4 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/40">
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-4 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-800/40 font-mono shadow-lg">
             Tailored Development Services
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-4">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-5">
             Professional <span className="gradient-text-purple">Services</span>
           </h2>
-          <p className="text-gray-400 mt-4 text-sm sm:text-base">
+          <p className="text-gray-400 mt-4 text-base sm:text-lg leading-relaxed">
             From ground-up plugin coding to full server optimization, Zyt Studio provides end-to-end Minecraft development solutions.
           </p>
         </div>
@@ -50,18 +51,18 @@ export const ServicesSection: React.FC<ServicesProps> = ({ onSelectService }) =>
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className={`glass-card rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden group ${
-                  service.popular ? 'border-purple-500/50 shadow-2xl shadow-purple-900/20' : ''
+                className={`glass-card rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-600/20 transition-all duration-300 ${
+                  service.popular ? 'border-purple-500/50 shadow-2xl shadow-purple-900/25 ring-1 ring-purple-500/30' : 'border-white/10'
                 }`}
               >
                 {service.popular && (
-                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-md">
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-mono font-extrabold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg shadow-purple-600/30">
                     Most Popular
                   </div>
                 )}
 
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600/30 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600/30 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-purple-400 transition-all shadow-md">
                     <IconComp className="w-7 h-7 text-cyan-400" />
                   </div>
 
@@ -85,17 +86,17 @@ export const ServicesSection: React.FC<ServicesProps> = ({ onSelectService }) =>
 
                 <div className="pt-6 border-t border-white/10 flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-purple-400" /> Turnaround: {service.deliveryTime}
+                    <div className="text-[11px] text-gray-400 font-mono flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-purple-400" /> Turnaround: {service.deliveryTime}
                     </div>
-                    <div className="text-base font-bold text-cyan-400 font-mono">
+                    <div className="text-base font-extrabold text-cyan-300 font-mono">
                       {service.priceStart}
                     </div>
                   </div>
 
                   <button
                     onClick={() => onSelectService(service.title)}
-                    className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-purple-600 hover:text-white border border-white/10 text-gray-200 text-xs font-semibold transition-all flex items-center gap-1.5"
+                    className="py-2.5 px-4 rounded-xl bg-purple-600/80 hover:bg-purple-500 text-white font-bold text-xs font-mono transition-all flex items-center gap-1.5 shadow-lg shadow-purple-600/30 hover:scale-105 active:scale-95 btn-shimmer"
                   >
                     Inquire
                     <ArrowRight className="w-3.5 h-3.5" />

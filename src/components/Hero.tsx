@@ -35,28 +35,28 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
   ];
 
   return (
-    <section id="hero" className="relative min-h-screen pt-32 pb-20 flex items-center justify-center overflow-hidden">
-      {/* Glow Orbs */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-red-600/10 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-10 right-1/4 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none" />
+    <section id="hero" className="relative min-h-screen pt-32 pb-24 flex items-center justify-center overflow-hidden">
+      {/* Dynamic Animated Ambient Radial Lights */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/20 rounded-full blur-[160px] pointer-events-none animate-pulse-glow" />
+      <div className="absolute top-1/3 left-1/5 w-[450px] h-[450px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-10 right-1/5 w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
-        {/* Top Mascot Display */}
+        {/* Top Mascot Display with 3D Floating & Lighting Animation */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="relative inline-block mb-8"
+          initial={{ opacity: 0, scale: 0.8, y: -20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="relative inline-block mb-8 group"
         >
-          <div className="relative w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-3xl p-[2px] bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 shadow-2xl shadow-purple-600/30">
+          <div className="relative w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-3xl p-[2.5px] bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 shadow-2xl shadow-purple-600/40 group-hover:scale-105 transition-transform duration-500 animate-float">
             <EditableImage
               src={mascotUrl}
               alt="Zyt Studio 3D Mascot"
               onSave={(newUrl) => updateSection?.('hero', { mascotUrl: newUrl })}
               className="w-full h-full object-cover rounded-[22px] border border-white/20 animate-mascot-glow"
             />
-            <span className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-lg pointer-events-none">
+            <span className="absolute -bottom-2 -right-2 px-3 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider bg-cyan-950/90 text-cyan-300 border border-cyan-400/40 shadow-xl pointer-events-none backdrop-blur-md">
               3D Mascot
             </span>
           </div>
@@ -67,10 +67,10 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-purple-500/30 text-purple-300 text-xs font-semibold tracking-wide mb-6 shadow-lg"
+          className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel border border-purple-500/40 text-purple-300 text-xs font-semibold tracking-wide mb-6 shadow-xl hover:border-purple-400 transition-colors font-mono"
         >
-          <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+          <Sparkles className="w-4 h-4 text-cyan-400" />
           <InlineEditableText
             value={badgeText}
             onSave={(val) => updateSection?.('hero', { badgeText: val })}
@@ -82,7 +82,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]"
+          className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.12]"
         >
           <InlineEditableText
             value={title}
@@ -114,7 +114,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <button
             onClick={onViewWorkClick}
-            className="px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs backdrop-blur-md transition-all hover:border-purple-400/50 flex items-center justify-center gap-2 group shadow-lg"
+            className="px-7 py-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs font-mono backdrop-blur-xl transition-all hover:border-purple-400/60 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group shadow-xl"
           >
             <Layers className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
             <InlineEditableText
@@ -125,9 +125,9 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
 
           <button
             onClick={onOrderClick}
-            className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="px-8 py-4 rounded-2xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-extrabold text-xs font-mono shadow-2xl shadow-purple-600/40 hover:shadow-purple-500/60 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 btn-shimmer"
           >
-            <Sparkles className="w-4 h-4 text-cyan-300" />
+            <Sparkles className="w-4 h-4 text-cyan-300 animate-pulse" />
             <InlineEditableText
               value={primaryBtnText}
               onSave={(val) => updateSection?.('hero', { primaryBtnText: val })}
@@ -139,14 +139,14 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             href={discordInvite}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-7 py-3.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
+            className="px-7 py-4 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 hover:text-white font-bold text-xs font-mono transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-xl"
           >
             <MessageSquare className="w-4 h-4 text-indigo-400" />
             <InlineEditableText
               value={discordBtnText}
               onSave={(val) => updateSection?.('hero', { discordBtnText: val })}
             />
-            <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
           </a>
         </motion.div>
 
@@ -155,7 +155,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-14 max-w-2xl mx-auto rounded-2xl glass-panel border border-white/10 text-left overflow-hidden shadow-2xl"
+          className="mt-14 max-w-2xl mx-auto rounded-2xl glass-panel border border-white/10 text-left overflow-hidden shadow-2xl hover:border-purple-500/40 transition-colors"
         >
           <div className="px-4 py-3 bg-[#0c0d1e] border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -191,13 +191,13 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
                 key={idx}
                 className="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center group"
               >
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:border-purple-500/50 transition-all">
                   <IconComponent className={`w-6 h-6 ${stat.color}`} />
                 </div>
                 <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight text-glow-purple">
                   {stat.value}
                 </div>
-                <div className="text-xs sm:text-sm font-medium text-gray-400 mt-1">
+                <div className="text-xs sm:text-sm font-medium text-gray-400 mt-1 font-mono">
                   {stat.label}
                 </div>
               </div>

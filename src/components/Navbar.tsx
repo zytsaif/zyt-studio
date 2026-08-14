@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
 import { Sparkles, Menu, X, ArrowRight, Lock, Disc as DiscordIcon } from 'lucide-react';
 
@@ -29,90 +30,111 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
     { name: 'Contact', href: '#contact' },
   ];
 
-  // Completely filter out any legacy 'Reviews' link
   const links = rawLinks.filter(
     (l) => l.name.toLowerCase() !== 'reviews' && l.href !== '#reviews'
   );
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('hero');
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+
+      // Simple active section detection based on element positions
+      const sectionIds = links.map((l) => l.href.replace('#', ''));
+      for (const id of sectionIds) {
+        const elem = document.getElementById(id);
+        if (elem) {
+          const rect = elem.getBoundingClientRect();
+          if (rect.top <= 200 && rect.bottom >= 200) {
+            setActiveSection(id);
+            break;
+          }
+        }
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [links]);
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
-          ? 'bg-[#060712]/90 backdrop-blur-md border-b border-purple-900/30 py-3 shadow-xl shadow-purple-950/20'
-          : 'bg-transparent py-5'
+          ? 'bg-[#050612]/85 backdrop-blur-2xl border-b border-purple-500/20 py-3 shadow-2xl shadow-purple-950/40'
+          : 'bg-transparent py-6'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Brand Logo with Mascot */}
-        <a href="#hero" className="flex items-center gap-3 group">
-          <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px] shadow-lg shadow-purple-500/25 group-hover:scale-105 transition-transform duration-300">
+        <a href="#hero" className="flex items-center gap-3.5 group">
+          <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px] shadow-lg shadow-purple-500/30 group-hover:scale-105 group-hover:shadow-purple-500/50 transition-all duration-300">
             <img
               src={logoUrl}
               alt={brandName}
               className="w-full h-full object-cover rounded-[10px]"
             />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-400 border border-slate-900"></span>
             </span>
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-xl font-extrabold tracking-wider text-white font-mono">
+              <span className="text-xl font-extrabold tracking-wider text-white font-mono group-hover:text-purple-300 transition-colors">
                 {brandName}{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400">
                   {brandTagline}
                 </span>
               </span>
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-purple-300/80 font-bold -mt-1">
-              Minecraft Dev
+            <span className="text-[10px] uppercase tracking-widest text-purple-300/80 font-bold -mt-1 font-mono">
+              Minecraft Dev Studio
             </span>
           </div>
         </a>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1 glass-panel px-4 py-1.5 rounded-full border border-white/10">
-          {links.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
-            >
-              {link.name}
-            </a>
-          ))}
+        {/* Desktop Glassmorphism Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-1 bg-[#090b1c]/70 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 shadow-inner">
+          {links.map((link) => {
+            const id = link.href.replace('#', '');
+            const isActive = activeSection === id;
+            return (
+              <a
+                key={link.name}
+                href={link.href}
+                className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 font-mono ${
+                  isActive
+                    ? 'text-white font-bold bg-gradient-to-r from-purple-600/60 to-cyan-600/60 border border-purple-400/40 shadow-lg shadow-purple-500/20'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {link.name}
+              </a>
+            );
+          })}
         </nav>
 
-        {/* Action Buttons */}
+        {/* Desktop Action Buttons */}
         <div className="hidden lg:flex items-center gap-3">
           <a
             href={discordInvite}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-800/50 text-indigo-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
+            className="px-4 py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900/90 border border-indigo-800/60 hover:border-indigo-500/60 text-indigo-200 hover:text-white text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-lg hover:scale-105 active:scale-95"
           >
-            <DiscordIcon className="w-3.5 h-3.5 text-indigo-400" />
+            <DiscordIcon className="w-4 h-4 text-indigo-400" />
             Discord
           </a>
 
           <button
             onClick={onOpenAdmin}
-            className={`p-2.5 rounded-xl border text-xs font-mono font-semibold flex items-center gap-1.5 transition-all ${
+            className={`p-2.5 rounded-xl border text-xs font-mono font-semibold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 ${
               isAdmin
-                ? 'bg-purple-950/60 border-purple-500/50 text-purple-300 hover:bg-purple-900/60'
+                ? 'bg-purple-950/80 border-purple-500/60 text-purple-300 hover:bg-purple-900/80 shadow-lg shadow-purple-900/30'
                 : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
             }`}
             title="CMS Control Panel (/admin)"
@@ -123,10 +145,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
 
           <button
             onClick={onOrderClick}
-            className="relative group overflow-hidden rounded-xl p-[1px] font-semibold text-xs transition-all duration-300 active:scale-95 shadow-lg shadow-purple-600/25"
+            className="relative group overflow-hidden rounded-xl p-[1px] font-semibold text-xs transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl shadow-purple-600/30 btn-shimmer"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 rounded-xl group-hover:opacity-100 opacity-90 transition-opacity"></span>
-            <span className="relative px-5 py-2.5 rounded-[11px] bg-[#0b0c1a] group-hover:bg-opacity-80 flex items-center gap-2 text-white font-medium transition-all">
+            <span className="relative px-5 py-2.5 rounded-[11px] bg-[#0b0c1a] group-hover:bg-opacity-80 flex items-center gap-2 text-white font-medium transition-all font-mono">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
               {orderBtnText}
               <ArrowRight className="w-3.5 h-3.5 text-purple-400 group-hover:translate-x-1 transition-transform" />
@@ -137,63 +159,71 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
         {/* Mobile Hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white"
+          className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white transition-colors"
         >
           {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Mobile Drawer */}
-      {mobileOpen && (
-        <div className="lg:hidden glass-panel border-b border-purple-900/30 px-6 py-6 mt-3 space-y-4">
-          <div className="flex flex-col space-y-2">
-            {links.map((link) => (
+      {/* Mobile Drawer with Framer Motion Animation */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="lg:hidden glass-panel border-b border-purple-900/40 px-6 py-6 mt-3 space-y-4 shadow-2xl overflow-hidden"
+          >
+            <div className="flex flex-col space-y-2">
+              {links.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="px-4 py-2.5 text-sm font-medium text-gray-200 hover:text-white hover:bg-purple-900/30 rounded-xl transition-colors font-mono"
+                >
+                  {link.name}
+                </a>
+              ))}
+            </div>
+
+            <div className="pt-4 border-t border-white/10 flex flex-col gap-2.5">
               <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-4 py-2.5 text-sm font-medium text-gray-200 hover:text-white hover:bg-purple-900/20 rounded-lg transition-colors"
+                href={discordInvite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-indigo-950/80 text-indigo-200 text-xs font-mono font-bold flex items-center justify-center gap-2 border border-indigo-800/40"
               >
-                {link.name}
+                <DiscordIcon className="w-4 h-4 text-indigo-400" />
+                Join Discord Server
               </a>
-            ))}
-          </div>
 
-          <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
-            <a
-              href={discordInvite}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-2.5 px-4 rounded-xl bg-indigo-950/80 text-indigo-200 text-xs font-mono font-bold flex items-center justify-center gap-2"
-            >
-              <DiscordIcon className="w-4 h-4 text-indigo-400" />
-              Join Discord Server
-            </a>
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  onOpenAdmin();
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-white/10 text-gray-300 text-xs font-mono font-semibold flex items-center justify-center gap-2 border border-white/10"
+              >
+                <Lock className="w-4 h-4 text-cyan-400" />
+                CMS Admin Panel (/admin)
+              </button>
 
-            <button
-              onClick={() => {
-                setMobileOpen(false);
-                onOpenAdmin();
-              }}
-              className="w-full py-2.5 px-4 rounded-xl bg-white/10 text-gray-300 text-xs font-mono font-semibold flex items-center justify-center gap-2"
-            >
-              <Lock className="w-4 h-4 text-cyan-400" />
-              CMS Admin Panel (/admin)
-            </button>
-
-            <button
-              onClick={() => {
-                setMobileOpen(false);
-                onOrderClick();
-              }}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Sparkles className="w-4 h-4" />
-              {orderBtnText}
-            </button>
-          </div>
-        </div>
-      )}
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  onOrderClick();
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 font-mono"
+              >
+                <Sparkles className="w-4 h-4" />
+                {orderBtnText}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

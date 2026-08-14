@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { MessageSquare, Mail, Globe, Play, ArrowUp, Lock } from 'lucide-react';
+import { MessageSquare, Mail, Globe, Play, ArrowUp, Lock, Sparkles } from 'lucide-react';
 
 interface FooterProps {
   onOpenAdmin: () => void;
@@ -25,13 +25,13 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
   };
 
   return (
-    <footer className="relative bg-[#03040a] z-10 border-t border-white/10 pt-16 pb-12 text-gray-400">
+    <footer className="relative bg-[#03040a] z-10 border-t border-purple-900/30 pt-16 pb-12 text-gray-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           {/* Brand Col with 3D Mascot */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px]">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px] shadow-lg shadow-purple-600/30">
                 <img
                   src={mascotUrl}
                   alt="Zyt Mascot Logo"
@@ -43,7 +43,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
               </span>
             </div>
 
-            <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
+            <p className="text-xs text-gray-400 max-w-sm leading-relaxed font-sans">
               {tagline} Specialized in custom Paper, Spigot, and Folia plugin development with enterprise-grade stability.
             </p>
 
@@ -53,35 +53,35 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 href={discordInvite}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
                 aria-label="Discord"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 text-indigo-400" />
               </a>
               <a
                 href={`mailto:${email}`}
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-cyan-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-cyan-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
                 aria-label="Email"
               >
-                <Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4 text-cyan-400" />
               </a>
               <a
                 href={githubLink}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
                 aria-label="Website"
               >
-                <Globe className="w-4 h-4" />
+                <Globe className="w-4 h-4 text-purple-400" />
               </a>
               <a
                 href={youtubeLink}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
                 aria-label="Youtube"
               >
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-4 h-4 text-red-400 fill-current" />
               </a>
             </div>
           </div>
@@ -91,7 +91,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             <h4 className="text-xs font-bold uppercase tracking-wider text-white font-mono mb-4">
               Navigation
             </h4>
-            <ul className="space-y-2.5 text-xs">
+            <ul className="space-y-2.5 text-xs font-mono">
               <li><a href="#hero" className="hover:text-cyan-400 transition-colors">Home</a></li>
               <li><a href="#plugins" className="hover:text-cyan-400 transition-colors">Plugins</a></li>
               <li><a href="#portfolio" className="hover:text-cyan-400 transition-colors">Portfolio</a></li>
@@ -104,10 +104,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             <h4 className="text-xs font-bold uppercase tracking-wider text-white font-mono mb-4">
               Support & Admin
             </h4>
-            <ul className="space-y-2.5 text-xs">
+            <ul className="space-y-2.5 text-xs font-mono">
               <li><a href="#order" className="hover:text-purple-400 transition-colors">Request Custom Plugin</a></li>
               <li><a href="#payment" className="hover:text-purple-400 transition-colors">Payment Methods</a></li>
-              <li><a href="#reviews" className="hover:text-purple-400 transition-colors">Client Reviews</a></li>
+              <li><a href="#contact" className="hover:text-purple-400 transition-colors">Contact Developer</a></li>
               <li>
                 <button
                   onClick={onOpenAdmin}
@@ -121,7 +121,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
         </div>
 
         {/* Copyright & Scroll Top Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
           <p>{footer?.copyright || '© 2026 Zyt Studio. All Rights Reserved.'}</p>
 
           <div className="flex items-center gap-6">
@@ -129,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
 
             <button
               onClick={scrollToTop}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-purple-600/30 text-gray-300 hover:text-white border border-white/10 hover:border-purple-500/50 transition-all flex items-center gap-1"
               aria-label="Scroll to top"
             >
               <ArrowUp className="w-4 h-4 text-cyan-400" />

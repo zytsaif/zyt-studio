@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
 import type { PluginItem } from '../data/pluginsData';
 import { InlineEditableText } from './InlineEditableText';
-import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Filter, Eye, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Eye, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface FeaturedPluginsProps {
   onSelectPlugin: (plugin: PluginItem) => void;
@@ -67,22 +67,22 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
   };
 
   return (
-    <section id="plugins" className="relative py-24 bg-[#05060e]/90 z-10 border-t border-white/5">
+    <section id="plugins" className="relative py-28 bg-[#05060e]/95 z-10 border-t border-white/5">
       {/* Background ambient glow */}
-      <div className="absolute top-1/2 left-10 w-96 h-96 bg-purple-600/10 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-600/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-1/2 left-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/40">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-4 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-800/40 font-mono shadow-lg">
             Premium Spigot & Paper Assets
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-4">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-5">
             Featured <span className="gradient-text-purple">Minecraft Plugins</span>
           </h2>
-          <p className="text-gray-400 mt-4 text-sm sm:text-base">
-            High-performance, battle-tested plugin suites created for top Minecraft servers and content creators worldwide.
+          <p className="text-gray-400 mt-4 text-base sm:text-lg leading-relaxed">
+            High-performance, battle-tested plugin suites created for top Minecraft networks, SMPs and content creators worldwide.
           </p>
 
           {/* Add Plugin Quick Action in Edit Mode */}
@@ -90,7 +90,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
             <div className="mt-4">
               <button
                 onClick={handleAddNewPlugin}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center gap-2 mx-auto animate-bounce"
+                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center gap-2 mx-auto animate-bounce font-mono"
               >
                 <Plus className="w-4 h-4" /> Add Mocap Studio / New Plugin Card
               </button>
@@ -98,15 +98,15 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
           )}
 
           {/* Category Filter Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold font-mono transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
                   selectedCategory === cat
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                    : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10'
+                    ? 'bg-purple-600 text-white shadow-xl shadow-purple-600/30 border border-purple-400/50 scale-105'
+                    : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 hover:border-purple-500/30'
                 }`}
               >
                 {cat}
@@ -127,7 +127,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
-                className="glass-card rounded-3xl p-7 flex flex-col justify-between border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-purple-600/10 relative"
+                className="glass-card rounded-3xl p-8 flex flex-col justify-between border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-purple-600/20 relative"
               >
                 {/* Visual Admin Controls on Card */}
                 {isEditMode && (
@@ -161,11 +161,11 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                 <div>
                   {/* Top Badge & Price */}
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="w-13 h-13 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-purple-400 transition-all shadow-md">
                       <IconComponent className="w-6 h-6 text-purple-400" />
                     </div>
 
-                    <span className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-purple-950/80 text-purple-300 border border-purple-800/40">
+                    <span className="px-3.5 py-1.5 rounded-full text-xs font-extrabold font-mono bg-purple-950/90 text-cyan-300 border border-purple-500/40 shadow-lg">
                       <InlineEditableText
                         value={plugin.price}
                         onSave={(val) => updatePlugin({ ...plugin, price: val })}
@@ -194,8 +194,8 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                   {/* Feature Checklist */}
                   <ul className="space-y-2 mb-8">
                     {plugin.features.map((feat, fIdx) => (
-                      <li key={fIdx} className="text-xs text-gray-400 flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <li key={fIdx} className="text-xs text-gray-300 flex items-center gap-2">
+                        <Check className="w-4 h-4 text-cyan-400 shrink-0" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -203,17 +203,17 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                <div className="pt-5 border-t border-white/10 flex items-center justify-between gap-3">
                   <button
                     onClick={() => onSelectPlugin(plugin)}
-                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs font-mono transition-all flex items-center justify-center gap-1.5 hover:border-white/20 border border-transparent"
                   >
-                    <Eye className="w-3.5 h-3.5 text-cyan-400" /> View Specs
+                    <Eye className="w-4 h-4 text-cyan-400" /> View Specs
                   </button>
 
                   <button
                     onClick={() => onOrderCustom(plugin.name)}
-                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1 shadow-lg shadow-purple-600/30"
+                    className="px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs font-mono transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/30 hover:scale-105 active:scale-95 btn-shimmer"
                   >
                     Order
                     <ArrowRight className="w-3.5 h-3.5 text-white" />
