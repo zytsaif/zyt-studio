@@ -32,7 +32,7 @@ export interface MediaItem {
   date: string;
 }
 
-export type RequestStatus = 'Pending' | 'Accepted' | 'In Progress' | 'Completed' | 'Rejected';
+export type RequestStatus = 'Pending' | 'Accepted' | 'In Progress' | 'Testing' | 'Completed' | 'Rejected';
 
 export interface OrderRequest {
   id: string; // e.g. ZYT-849201
@@ -48,6 +48,7 @@ export interface OrderRequest {
   budgetFormatted: string;
   deadline: string;
   status: RequestStatus;
+  progressNotes?: string[];
   createdAt: string;
 }
 
@@ -215,6 +216,7 @@ interface StoreContextType {
   // Order Requests & Ticket System
   addOrderRequest: (req: Omit<OrderRequest, 'ownerId' | 'status' | 'createdAt'>) => OrderRequest;
   updateRequestStatus: (id: string, status: RequestStatus) => void;
+  addProgressNote: (id: string, note: string) => void;
   deleteOrderRequest: (id: string) => void;
   addChatMessage: (msg: Omit<TicketChatMessage, 'id' | 'timestamp'>) => void;
 
@@ -404,7 +406,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   });
 
-  // Order Requests Platform State
+  // Order Requests Platform State (with 'Testing' status support)
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>(() => {
     const saved = localStorage.getItem('zyt_order_requests');
     if (saved) return JSON.parse(saved);
@@ -423,6 +425,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         budgetFormatted: '₹2,000 - ₹5,000',
         deadline: 'Within 1 Week',
         status: 'In Progress',
+        progressNotes: ['Architecture designed on Paper 1.20.6 API', 'Heart steal listener implementation in testing phase'],
         createdAt: '2026-08-14 10:30 AM',
       },
       {
@@ -439,6 +442,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         budgetFormatted: '$150 - $350',
         deadline: 'Urgent (24 - 48 Hours)',
         status: 'Pending',
+        progressNotes: ['Initial specs reviewed by dev team'],
         createdAt: '2026-08-14 01:15 PM',
       },
     ];
@@ -682,6 +686,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...reqData,
       ownerId: clientOwnerId,
       status: 'Pending',
+      progressNotes: ['Ticket created & queued for developer review'],
       createdAt: formattedDate,
     };
 
@@ -715,6 +720,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setTicketChats((prev) => [...prev, statusMsg]);
+  };
+
+  const addProgressNote = (id: string, note: string) => {
+    setOrderRequests((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          const notes = r.progressNotes || [];
+          return { ...r, progressNotes: [...notes, note] };
+        }
+        return r;
+      })
+    );
   };
 
   const deleteOrderRequest = (id: string) => {
@@ -931,6 +948,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteService,
         addOrderRequest,
         updateRequestStatus,
+        addProgressNote,
         deleteOrderRequest,
         addChatMessage,
         addReview,

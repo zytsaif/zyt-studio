@@ -72,8 +72,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     services,
     reviews,
     orderRequests,
+    ticketChats,
     updateRequestStatus,
+    addProgressNote,
     deleteOrderRequest,
+    addChatMessage,
     isAdmin,
     adminRole,
     adminPin,
@@ -125,6 +128,13 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
   const [mediaName, setMediaName] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   const importFileRef = useRef<HTMLInputElement | null>(null);
+
+  // Order Request Management States
+  const [selectedAdminRequest, setSelectedAdminRequest] = useState<OrderRequest | null>(null);
+  const [adminChatInput, setAdminChatInput] = useState('');
+  const [adminNoteInput, setAdminNoteInput] = useState('');
+  const [adminRequestSearch, setAdminRequestSearch] = useState('');
+  const [adminRequestFilter, setAdminRequestFilter] = useState('All');
 
   if (!isOpen) return null;
 
@@ -632,73 +642,229 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                 </div>
               )}
 
-              {/* REQUESTS & CLIENT TICKETS TAB */}
+              {/* REQUESTS & CLIENT TICKETS TAB (2-PANEL ORDER MANAGEMENT CENTER) */}
               {activeTab === 'requests' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-4 flex flex-col h-[calc(100vh-180px)] overflow-hidden">
+                  <div className="flex items-center justify-between shrink-0">
                     <div>
-                      <h3 className="text-xl font-bold text-white font-mono">Client Requests & Tickets</h3>
-                      <p className="text-xs text-gray-400">Manage client submissions, update status & monitor budget specs.</p>
+                      <h3 className="text-xl font-bold text-white font-mono">Order Management Center</h3>
+                      <p className="text-xs text-gray-400">Click any ticket to load full specifications, chat in real-time, update status & add progress notes.</p>
                     </div>
                     <span className="text-xs text-cyan-400 font-mono font-bold">
-                      Total Requests: {orderRequests.length}
+                      Total Orders: {orderRequests.length}
                     </span>
                   </div>
 
-                  <div className="space-y-3">
-                    {orderRequests.length === 0 ? (
-                      <div className="text-center py-12 text-xs text-gray-400 glass-card rounded-2xl">
-                        No client requests submitted yet.
+                  {/* 2-Panel Split Workspace */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-hidden">
+                    {/* Left Column: Ticket List + Search & Filters */}
+                    <div className="lg:col-span-5 glass-card rounded-2xl border border-white/10 flex flex-col overflow-hidden bg-[#04050d]">
+                      {/* Search & Filters */}
+                      <div className="p-3 border-b border-white/10 space-y-2 shrink-0">
+                        <input
+                          type="text"
+                          value={adminRequestSearch}
+                          onChange={(e) => setAdminRequestSearch(e.target.value)}
+                          placeholder="Search tickets by ID, Name, Discord..."
+                          className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono"
+                        />
+
+                        <div className="flex flex-wrap gap-1 text-[10px] font-mono">
+                          {['All', 'Pending', 'Accepted', 'In Progress', 'Testing', 'Completed', 'Rejected'].map((st) => (
+                            <button
+                              key={st}
+                              onClick={() => setAdminRequestFilter(st)}
+                              className={`px-2.5 py-1 rounded-lg transition-all ${
+                                adminRequestFilter === st
+                                  ? 'bg-purple-600 text-white font-bold'
+                                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    ) : (
-                      orderRequests.map((req) => (
-                        <div
-                          key={req.id}
-                          className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-cyan-400 font-mono">#{req.id}</span>
-                              <span className="text-xs font-bold text-white font-mono">{req.name}</span>
-                              <span className="text-xs text-indigo-300 font-mono">({req.discord})</span>
+
+                      {/* Ticket Items List */}
+                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {orderRequests
+                          .filter((req) => {
+                            const matchFilter = adminRequestFilter === 'All' || req.status === adminRequestFilter;
+                            const matchSearch =
+                              !adminRequestSearch ||
+                              req.id.toLowerCase().includes(adminRequestSearch.toLowerCase()) ||
+                              req.name.toLowerCase().includes(adminRequestSearch.toLowerCase()) ||
+                              req.discord.toLowerCase().includes(adminRequestSearch.toLowerCase());
+                            return matchFilter && matchSearch;
+                          })
+                          .map((req) => (
+                            <div
+                              key={req.id}
+                              onClick={() => setSelectedAdminRequest(req)}
+                              className={`p-3.5 rounded-xl cursor-pointer border transition-all ${
+                                selectedAdminRequest?.id === req.id
+                                  ? 'bg-purple-950/40 border-purple-500/60 shadow-lg'
+                                  : 'bg-white/5 border-white/5 hover:border-purple-500/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold text-cyan-400 font-mono">#{req.id}</span>
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                                  {req.status}
+                                </span>
+                              </div>
+                              <div className="text-xs font-bold text-white font-mono">{req.name}</div>
+                              <div className="text-[11px] text-gray-400 truncate mt-0.5">{req.pluginIdea}</div>
+                              <div className="flex items-center justify-between pt-2 mt-1 border-t border-white/5 text-[10px] font-mono text-gray-400">
+                                <span className="text-emerald-400 font-bold">{req.budgetFormatted}</span>
+                                <span>{req.createdAt}</span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-300 line-clamp-1 font-sans">{req.pluginIdea}</p>
-                            <div className="flex items-center gap-4 text-[11px] font-mono text-gray-400 pt-1">
-                              <span>Budget: <strong className="text-emerald-400">{req.budgetFormatted}</strong></span>
-                              <span>Currency: <strong>{req.currency}</strong></span>
-                              <span>Date: <strong>{req.createdAt}</strong></span>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Complete Ticket Conversation & Specs Panel */}
+                    <div className="lg:col-span-7 glass-card rounded-2xl border border-white/10 flex flex-col overflow-hidden bg-[#060712]">
+                      {selectedAdminRequest ? (
+                        <div className="flex flex-col h-full overflow-hidden">
+                          {/* Ticket Header & Status Actions */}
+                          <div className="p-4 border-b border-white/10 bg-[#08091a] space-y-3 shrink-0">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-lg font-bold text-white font-mono">
+                                    Ticket #{selectedAdminRequest.id}
+                                  </h4>
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                                    {selectedAdminRequest.status}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-gray-400 font-mono">Client: {selectedAdminRequest.name} • {selectedAdminRequest.email}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={selectedAdminRequest.status}
+                                  onChange={(e) => {
+                                    updateRequestStatus(selectedAdminRequest.id, e.target.value as any);
+                                    onTriggerToast(`Updated status to ${e.target.value}`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="Accepted">Accepted</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Testing">Testing</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Rejected">Rejected</option>
+                                </select>
+
+                                <button
+                                  onClick={() => {
+                                    deleteOrderRequest(selectedAdminRequest.id);
+                                    setSelectedAdminRequest(null);
+                                    onTriggerToast(`Deleted ticket #${selectedAdminRequest.id}`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-mono font-bold"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Full Specifications Box */}
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs leading-relaxed">
+                              <div className="font-bold text-purple-300 mb-1 font-mono">Full Specifications:</div>
+                              {selectedAdminRequest.pluginIdea}
+                            </div>
+
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
+                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <span className="text-gray-400 block text-[9px]">Discord</span>
+                                <strong className="text-indigo-300">{selectedAdminRequest.discord}</strong>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <span className="text-gray-400 block text-[9px]">Budget</span>
+                                <strong className="text-emerald-400">{selectedAdminRequest.budgetFormatted}</strong>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <span className="text-gray-400 block text-[9px]">Deadline</span>
+                                <strong className="text-amber-300">{selectedAdminRequest.deadline}</strong>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 shrink-0">
-                            <select
-                              value={req.status}
-                              onChange={(e) => {
-                                updateRequestStatus(req.id, e.target.value as any);
-                                onTriggerToast(`Updated #${req.id} status to ${e.target.value}`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Accepted">Accepted</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Rejected">Rejected</option>
-                            </select>
+                          {/* Chat & Progress Notes Section */}
+                          <div className="flex-1 flex flex-col overflow-hidden bg-[#04050c]">
+                            {/* Messages Stream */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                              {ticketChats
+                                .filter((c) => c.requestId === selectedAdminRequest.id)
+                                .map((msg) => (
+                                  <div
+                                    key={msg.id}
+                                    className={`flex flex-col ${
+                                      msg.sender === 'Admin' ? 'items-end' : 'items-start'
+                                    }`}
+                                  >
+                                    <div className="text-[10px] text-gray-400 font-mono mb-0.5">
+                                      {msg.senderName} ({msg.sender}) • {msg.timestamp}
+                                    </div>
+                                    <div
+                                      className={`max-w-md p-3 rounded-xl text-xs ${
+                                        msg.sender === 'Admin'
+                                          ? 'bg-purple-600 text-white rounded-tr-none'
+                                          : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/10'
+                                      }`}
+                                    >
+                                      {msg.text}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
 
-                            <button
-                              onClick={() => {
-                                deleteOrderRequest(req.id);
-                                onTriggerToast(`Deleted ticket #${req.id}`);
+                            {/* Real-time Admin Chat Input */}
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                if (!adminChatInput.trim()) return;
+                                addChatMessage({
+                                  requestId: selectedAdminRequest.id,
+                                  sender: 'Admin',
+                                  senderName: 'Zyt Developer',
+                                  text: adminChatInput.trim(),
+                                });
+                                setAdminChatInput('');
+                                onTriggerToast('Sent message to client ticket!');
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 text-xs flex items-center gap-1"
+                              className="p-3 border-t border-white/10 bg-[#070818] flex gap-2"
                             >
-                              <Trash2 className="w-3.5 h-3.5" /> Delete
-                            </button>
+                              <input
+                                type="text"
+                                value={adminChatInput}
+                                onChange={(e) => setAdminChatInput(e.target.value)}
+                                placeholder={`Reply to ${selectedAdminRequest.name}...`}
+                                className="flex-1 px-3.5 py-2.5 rounded-xl glass-input text-xs"
+                              />
+                              <button
+                                type="submit"
+                                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                              >
+                                Send Reply
+                              </button>
+                            </form>
                           </div>
                         </div>
-                      ))
-                    )}
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
+                          <p className="text-sm font-mono font-bold text-white">Select an order ticket on the left</p>
+                          <p className="text-xs text-gray-500 mt-1">Loads complete specifications, real-time client chat, and status actions.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

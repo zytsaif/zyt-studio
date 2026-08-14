@@ -22,7 +22,10 @@ import {
   ShieldCheck,
   ExternalLink,
   ShieldAlert,
-  Lock
+  Lock,
+  FlaskConical,
+  Plus,
+  ListTodo
 } from 'lucide-react';
 
 interface RequestsPortalModalProps {
@@ -41,6 +44,8 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     ticketChats,
     addChatMessage,
     updateRequestStatus,
+    addProgressNote,
+    deleteOrderRequest,
     isAdmin,
     cmsSections,
     clientOwnerId,
@@ -52,6 +57,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
   const [searchTicketId, setSearchTicketId] = useState<string>('');
   const [selectedRequest, setSelectedRequest] = useState<OrderRequest | null>(null);
   const [chatInput, setChatInput] = useState<string>('');
+  const [newNoteInput, setNewNoteInput] = useState<string>('');
 
   if (!isOpen) return null;
 
@@ -81,6 +87,8 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/40 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Accepted</span>;
       case 'In Progress':
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-800/40 flex items-center gap-1"><PlayCircle className="w-3 h-3 animate-spin-slow" /> In Progress</span>;
+      case 'Testing':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-800/40 flex items-center gap-1"><FlaskConical className="w-3 h-3 text-cyan-400" /> Testing</span>;
       case 'Completed':
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/40 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Completed</span>;
       case 'Rejected':
@@ -94,7 +102,6 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     e.preventDefault();
     if (!chatInput.trim() || !selectedRequest) return;
 
-    // Security Check: Verify permission before adding message
     if (!canAccessTicket(selectedRequest.id)) {
       onTriggerToast('Access Denied: You do not own this ticket.');
       return;
@@ -111,8 +118,21 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     onTriggerToast('Message sent to ticket chat.');
   };
 
-  const currentChats = selectedRequest && canAccessTicket(selectedRequest.id)
-    ? ticketChats.filter((c) => c.requestId === selectedRequest.id)
+  const handleAddNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteInput.trim() || !selectedRequest) return;
+
+    addProgressNote(selectedRequest.id, newNoteInput.trim());
+    setNewNoteInput('');
+    onTriggerToast('Progress note added to ticket.');
+  };
+
+  const activeTicketObj = selectedRequest
+    ? orderRequests.find((r) => r.id === selectedRequest.id) || selectedRequest
+    : null;
+
+  const currentChats = activeTicketObj && canAccessTicket(activeTicketObj.id)
+    ? ticketChats.filter((c) => c.requestId === activeTicketObj.id)
     : [];
 
   return (
@@ -127,7 +147,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-white font-mono">
-                  {isAdmin ? 'Admin Client Requests Portal' : 'My Plugin Requests & Tickets'}
+                  {isAdmin ? 'Admin Order Management Center' : 'My Plugin Requests & Tickets'}
                 </h3>
                 {pendingCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
@@ -169,7 +189,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
               )}
 
               <div className="flex flex-wrap gap-1.5 text-[11px] font-mono">
-                {['All', 'Pending', 'In Progress', 'Accepted', 'Completed', 'Rejected'].map((st) => (
+                {['All', 'Pending', 'Accepted', 'In Progress', 'Testing', 'Completed', 'Rejected'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setActiveFilter(st)}
@@ -230,8 +250,8 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
 
           {/* Right Column: Request Details & Built-in Ticket Chat */}
           <div className="hidden md:flex flex-1 flex-col bg-[#060712] overflow-hidden">
-            {selectedRequest ? (
-              !canAccessTicket(selectedRequest.id) ? (
+            {activeTicketObj ? (
+              !canAccessTicket(activeTicketObj.id) ? (
                 /* Access Denied Security Screen */
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-4">
                   <div className="w-16 h-16 rounded-2xl bg-red-950/60 border border-red-800 flex items-center justify-center shadow-2xl">
@@ -240,32 +260,32 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
                   <div>
                     <h4 className="text-xl font-bold text-white font-mono">Access Denied</h4>
                     <p className="text-xs text-gray-300 mt-1 max-w-md leading-relaxed">
-                      You do not have permission to view or chat in ticket <strong className="text-cyan-400">#{selectedRequest.id}</strong>. Tickets are strictly confidential between the client owner and Zyt Studio Developers.
+                      You do not have permission to view or chat in ticket <strong className="text-cyan-400">#{activeTicketObj.id}</strong>. Tickets are strictly confidential between the client owner and Zyt Studio Developers.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-1 flex-col h-full overflow-hidden">
                   {/* Details Top Box */}
-                  <div className="p-6 border-b border-white/10 bg-[#08091a] space-y-4 shrink-0">
+                  <div className="p-6 border-b border-white/10 bg-[#08091a] space-y-4 shrink-0 overflow-y-auto max-h-[45vh]">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-3">
                           <h4 className="text-xl font-extrabold text-white font-mono">
-                            Ticket #{selectedRequest.id}
+                            Ticket #{activeTicketObj.id}
                           </h4>
-                          {getStatusBadge(selectedRequest.status)}
+                          {getStatusBadge(activeTicketObj.status)}
                         </div>
-                        <span className="text-xs text-gray-400 font-mono">Submitted on {selectedRequest.createdAt}</span>
+                        <span className="text-xs text-gray-400 font-mono">Submitted on {activeTicketObj.createdAt}</span>
                       </div>
 
                       {/* Admin Actions Bar */}
                       {isAdmin && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <select
-                            value={selectedRequest.status}
+                            value={activeTicketObj.status}
                             onChange={(e) => {
-                              updateRequestStatus(selectedRequest.id, e.target.value as RequestStatus);
+                              updateRequestStatus(activeTicketObj.id, e.target.value as RequestStatus);
                               onTriggerToast(`Status updated to ${e.target.value}`);
                             }}
                             className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
@@ -273,9 +293,21 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
                             <option value="Pending">Pending</option>
                             <option value="Accepted">Accepted</option>
                             <option value="In Progress">In Progress</option>
+                            <option value="Testing">Testing</option>
                             <option value="Completed">Completed</option>
                             <option value="Rejected">Rejected</option>
                           </select>
+
+                          <button
+                            onClick={() => {
+                              deleteOrderRequest(activeTicketObj.id);
+                              setSelectedRequest(null);
+                              onTriggerToast(`Deleted ticket #${activeTicketObj.id}`);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-mono font-bold"
+                          >
+                            Delete Ticket
+                          </button>
                         </div>
                       )}
                     </div>
@@ -284,27 +316,60 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
                       <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
                         <div className="text-[10px] text-gray-400">Client Name</div>
-                        <div className="font-bold text-white truncate">{selectedRequest.name}</div>
+                        <div className="font-bold text-white truncate">{activeTicketObj.name}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
                         <div className="text-[10px] text-gray-400">Discord Handle</div>
-                        <div className="font-bold text-indigo-300 truncate">{selectedRequest.discord}</div>
+                        <div className="font-bold text-indigo-300 truncate">{activeTicketObj.discord}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
                         <div className="text-[10px] text-gray-400">Budget Range</div>
-                        <div className="font-bold text-emerald-400">{selectedRequest.budgetFormatted}</div>
+                        <div className="font-bold text-emerald-400">{activeTicketObj.budgetFormatted}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
                         <div className="text-[10px] text-gray-400">Desired Deadline</div>
-                        <div className="font-bold text-amber-300 truncate">{selectedRequest.deadline}</div>
+                        <div className="font-bold text-amber-300 truncate">{activeTicketObj.deadline}</div>
                       </div>
                     </div>
 
                     {/* Plugin Idea Description */}
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-200 leading-relaxed font-sans">
                       <strong className="text-purple-300 block mb-1 font-mono">Plugin Specifications:</strong>
-                      {selectedRequest.pluginIdea}
+                      {activeTicketObj.pluginIdea}
                     </div>
+
+                    {/* Progress Notes Section */}
+                    {activeTicketObj.progressNotes && activeTicketObj.progressNotes.length > 0 && (
+                      <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-2">
+                        <div className="text-xs font-bold text-purple-300 font-mono flex items-center gap-1.5">
+                          <ListTodo className="w-3.5 h-3.5 text-purple-400" /> Progress & Release Notes
+                        </div>
+                        <ul className="space-y-1 text-xs text-gray-300 list-disc list-inside font-sans">
+                          {activeTicketObj.progressNotes.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Admin Add Progress Note Bar */}
+                    {isAdmin && (
+                      <form onSubmit={handleAddNote} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newNoteInput}
+                          onChange={(e) => setNewNoteInput(e.target.value)}
+                          placeholder="Add progress note (e.g. Beta v1.0 released for testing)..."
+                          className="flex-1 px-3.5 py-2 rounded-xl glass-input text-xs font-mono"
+                        />
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-800 text-xs font-mono font-bold flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Note
+                        </button>
+                      </form>
+                    )}
 
                     {/* Discord Invite Banner inside Ticket Page */}
                     <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900 border border-indigo-500/40 flex items-center justify-between gap-3 text-xs">
@@ -386,7 +451,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
                         type="text"
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
-                        placeholder={`Type message to ticket #${selectedRequest.id}...`}
+                        placeholder={`Type message to ticket #${activeTicketObj.id}...`}
                         className="flex-1 px-4 py-3 rounded-xl glass-input text-xs"
                       />
                       <button
@@ -407,7 +472,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
                 <div>
                   <h4 className="text-lg font-bold text-white font-mono">Select a Request Ticket</h4>
                   <p className="text-xs text-gray-400 mt-1 max-w-sm">
-                    Click any request ticket on the left to view full specifications, update status, and chat in real-time.
+                    Click any request ticket on the left to view full specifications, update status, add progress notes, and chat in real-time.
                   </p>
                 </div>
               </div>
