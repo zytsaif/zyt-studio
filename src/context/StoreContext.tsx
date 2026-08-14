@@ -128,6 +128,18 @@ interface StoreContextType {
   adminPin: string;
   discordWebhookUrl: string;
 
+  // Backward Compatibility Properties
+  contactSettings: CMSSections['contact'];
+  paymentSettings: CMSSections['payment'];
+  websiteSettings: {
+    heroTitle: string;
+    heroSubheading: string;
+    mascotUrl: string;
+    footerText: string;
+    discordWebhookUrl: string;
+    adminPin: string;
+  };
+
   // Actions
   setIsAdmin: (val: boolean) => void;
   setAdminPin: (pin: string) => void;
@@ -135,6 +147,9 @@ interface StoreContextType {
   updateSection: <K extends keyof CMSSections>(section: K, content: Partial<CMSSections[K]>) => void;
   updateThemeConfig: (config: Partial<ThemeConfig>) => void;
   resetSection: (section: keyof CMSSections) => void;
+  updatePaymentSettings: (settings: Partial<CMSSections['payment']>) => void;
+  updateContactSettings: (settings: Partial<CMSSections['contact']>) => void;
+  updateWebsiteSettings: (settings: Partial<{ heroTitle: string; heroSubheading: string; mascotUrl: string; footerText: string; discordWebhookUrl: string; adminPin: string }>) => void;
   
   // Media Library
   addMediaItem: (item: Omit<MediaItem, 'id' | 'date'>) => void;
@@ -513,6 +528,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider
       value={{
+        // Backward Compatibility Aliases
+        contactSettings: cmsSections?.contact || DEFAULT_SECTIONS.contact,
+        paymentSettings: cmsSections?.payment || DEFAULT_SECTIONS.payment,
+        websiteSettings: {
+          heroTitle: cmsSections?.hero?.title || DEFAULT_SECTIONS.hero.title,
+          heroSubheading: cmsSections?.hero?.subtitle || DEFAULT_SECTIONS.hero.subtitle,
+          mascotUrl: cmsSections?.hero?.mascotUrl || DEFAULT_SECTIONS.hero.mascotUrl,
+          footerText: cmsSections?.footer?.tagline || DEFAULT_SECTIONS.footer.tagline,
+          discordWebhookUrl: discordWebhookUrl || '',
+          adminPin: adminPin || 'admin123',
+        },
+        updatePaymentSettings: (settings) => updateSection('payment', settings),
+        updateContactSettings: (settings) => updateSection('contact', settings),
+        updateWebsiteSettings: (settings) => {
+          if (settings.discordWebhookUrl !== undefined) setDiscordWebhookUrl(settings.discordWebhookUrl);
+          if (settings.adminPin !== undefined) setAdminPin(settings.adminPin);
+          if (settings.heroTitle !== undefined) updateSection('hero', { title: settings.heroTitle });
+          if (settings.heroSubheading !== undefined) updateSection('hero', { subtitle: settings.heroSubheading });
+          if (settings.mascotUrl !== undefined) updateSection('hero', { mascotUrl: settings.mascotUrl });
+          if (settings.footerText !== undefined) updateSection('footer', { tagline: settings.footerText });
+        },
         cmsSections,
         themeConfig,
         mediaLibrary,

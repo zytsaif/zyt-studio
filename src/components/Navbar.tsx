@@ -8,7 +8,25 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => {
-  const { cmsSections, isAdmin } = useStore();
+  const store = useStore();
+  const cmsNavbar = store?.cmsSections?.navbar;
+  const isAdmin = store?.isAdmin || false;
+
+  const brandName = cmsNavbar?.brandName || 'ZYT';
+  const brandTagline = cmsNavbar?.brandTagline || 'STUDIO';
+  const logoUrl = cmsNavbar?.logoUrl || '/zyt_mascot.jpg';
+  const orderBtnText = cmsNavbar?.orderBtnText || 'Order Plugin';
+  const links = cmsNavbar?.links || [
+    { name: 'Home', href: '#hero' },
+    { name: 'Plugins', href: '#plugins' },
+    { name: 'Portfolio', href: '#portfolio' },
+    { name: 'Services', href: '#services' },
+    { name: 'Why Us', href: '#why-us' },
+    { name: 'Reviews', href: '#reviews' },
+    { name: 'Payment', href: '#payment' },
+    { name: 'Contact', href: '#contact' },
+  ];
+
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -33,8 +51,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
         <a href="#hero" className="flex items-center gap-3 group">
           <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px] shadow-lg shadow-purple-500/25 group-hover:scale-105 transition-transform duration-300">
             <img
-              src={cmsSections.navbar.logoUrl}
-              alt={cmsSections.navbar.brandName}
+              src={logoUrl}
+              alt={brandName}
               className="w-full h-full object-cover rounded-[10px]"
             />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -46,9 +64,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="text-xl font-extrabold tracking-wider text-white font-mono">
-                {cmsSections.navbar.brandName}{' '}
+                {brandName}{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400">
-                  {cmsSections.navbar.brandTagline}
+                  {brandTagline}
                 </span>
               </span>
             </div>
@@ -60,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-1 glass-panel px-4 py-1.5 rounded-full border border-white/10">
-          {cmsSections.navbar.links.map((link) => (
+          {links.map((link) => (
             <a
               key={link.name}
               href={link.href}
@@ -93,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
             <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 rounded-xl group-hover:opacity-100 opacity-90 transition-opacity"></span>
             <span className="relative px-5 py-2.5 rounded-[11px] bg-[#0b0c1a] group-hover:bg-opacity-80 flex items-center gap-2 text-white font-medium transition-all">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-              {cmsSections.navbar.orderBtnText}
+              {orderBtnText}
               <ArrowRight className="w-3.5 h-3.5 text-purple-400 group-hover:translate-x-1 transition-transform" />
             </span>
           </button>
@@ -112,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
       {mobileOpen && (
         <div className="lg:hidden glass-panel border-b border-purple-900/30 px-6 py-6 mt-3 space-y-4">
           <div className="flex flex-col space-y-2">
-            {cmsSections.navbar.links.map((link) => (
+            {links.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
@@ -144,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg"
             >
               <Sparkles className="w-4 h-4" />
-              {cmsSections.navbar.orderBtnText}
+              {orderBtnText}
             </button>
           </div>
         </div>

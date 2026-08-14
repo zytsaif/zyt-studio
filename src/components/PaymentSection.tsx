@@ -7,14 +7,22 @@ interface PaymentSectionProps {
 }
 
 export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }) => {
-  const { paymentSettings } = useStore();
+  const store = useStore();
+  const cmsPayment = store?.cmsSections?.payment;
+  const legacyPayment = store?.paymentSettings;
+
+  const upiId = cmsPayment?.upiId || legacyPayment?.upiId || 'zytsaif109@upi';
+  const qrCodeUrl = cmsPayment?.qrCodeUrl || legacyPayment?.qrCodeUrl || '/zyt_mascot.jpg';
+  const instructions = cmsPayment?.instructions || legacyPayment?.instructions || 'Scan QR Code or pay directly to the UPI ID.';
+  const enabledMethods = cmsPayment?.enabledMethods || legacyPayment?.enabledMethods || { upi: true, card: true, paypal: true, crypto: true };
+
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
   const handleCopyUpi = () => {
-    navigator.clipboard.writeText(paymentSettings.upiId);
+    navigator.clipboard.writeText(upiId);
     setCopiedUpi(true);
-    onTriggerToast(`UPI ID copied: ${paymentSettings.upiId}`);
+    onTriggerToast(`UPI ID copied: ${upiId}`);
     setTimeout(() => setCopiedUpi(false), 2500);
   };
 
@@ -37,7 +45,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }
         {/* Payment Methods Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {/* UPI Payment Card */}
-          {paymentSettings.enabledMethods.upi && (
+          {enabledMethods?.upi !== false && (
             <div className="glass-card rounded-3xl p-8 border border-purple-500/40 shadow-2xl relative flex flex-col justify-between md:col-span-2 bg-gradient-to-br from-[#0d0e22] via-[#090a18] to-[#04050d]">
               <div>
                 <div className="flex items-center justify-between mb-6">
@@ -56,7 +64,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }
                 </div>
 
                 <p className="text-xs text-gray-300 leading-relaxed mb-6">
-                  {paymentSettings.instructions}
+                  {instructions}
                 </p>
 
                 {/* Copyable UPI ID Box */}
@@ -64,7 +72,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }
                   <div className="space-y-0.5">
                     <div className="text-[11px] text-gray-400">Official UPI ID</div>
                     <div className="text-lg font-bold text-cyan-400 font-mono tracking-wider">
-                      {paymentSettings.upiId}
+                      {upiId}
                     </div>
                   </div>
 
@@ -109,19 +117,19 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }
               </p>
 
               <div className="space-y-3 font-mono text-xs text-gray-300">
-                {paymentSettings.enabledMethods.paypal && (
+                {enabledMethods?.paypal !== false && (
                   <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
                     <span>PayPal Invoicing</span>
                     <span className="text-cyan-400">Supported</span>
                   </div>
                 )}
-                {paymentSettings.enabledMethods.card && (
+                {enabledMethods?.card !== false && (
                   <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
                     <span>Credit / Debit Card</span>
                     <span className="text-cyan-400">Supported</span>
                   </div>
                 )}
-                {paymentSettings.enabledMethods.crypto && (
+                {enabledMethods?.crypto !== false && (
                   <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
                     <span>Crypto (USDT / BTC)</span>
                     <span className="text-cyan-400">Supported</span>
@@ -151,14 +159,14 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({ onTriggerToast }
             {/* QR Code Display */}
             <div className="w-60 h-60 mx-auto bg-white p-3 rounded-2xl shadow-inner flex flex-col items-center justify-center border-4 border-purple-600 overflow-hidden">
               <img
-                src={paymentSettings.qrCodeUrl}
+                src={qrCodeUrl}
                 alt="UPI Payment QR Code"
                 className="w-full h-full object-cover rounded-xl"
               />
             </div>
 
             <div className="font-mono text-xs font-bold text-purple-300 bg-purple-950/60 p-2.5 rounded-xl border border-purple-800/40">
-              UPI ID: {paymentSettings.upiId}
+              UPI ID: {upiId}
             </div>
 
             <button

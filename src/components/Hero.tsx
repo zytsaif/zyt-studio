@@ -9,7 +9,20 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => {
-  const { cmsSections } = useStore();
+  const store = useStore();
+  const cmsSections = store?.cmsSections;
+  const hero = cmsSections?.hero;
+  const webSettings = store?.websiteSettings;
+  const contact = cmsSections?.contact || store?.contactSettings;
+
+  const title = hero?.title || webSettings?.heroTitle || 'Professional Minecraft Plugin Development';
+  const description = hero?.description || webSettings?.heroSubheading || 'Custom Plugins, Premium Systems, Server Solutions & Minecraft Development Services engineered for 20 TPS performance.';
+  const mascotUrl = hero?.mascotUrl || webSettings?.mascotUrl || '/zyt_mascot.jpg';
+  const badgeText = hero?.badgeText || 'Next-Gen Minecraft Studio & Paper/Spigot Architecture';
+  const primaryBtnText = hero?.primaryBtnText || 'Order Custom Plugin';
+  const secondaryBtnText = hero?.secondaryBtnText || 'View Portfolio';
+  const discordBtnText = hero?.discordBtnText || 'Join Discord';
+  const discordInvite = contact?.discordInvite || 'https://discord.gg';
 
   const stats = [
     { label: 'Plugins Created', value: '50+', icon: Code, color: 'text-purple-400' },
@@ -35,7 +48,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <div className="relative w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-3xl p-[2px] bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 shadow-2xl shadow-purple-600/30">
             <img
-              src={cmsSections.hero.mascotUrl}
+              src={mascotUrl}
               alt="Zyt Studio 3D Mascot"
               className="w-full h-full object-cover rounded-[22px] border border-white/20 animate-mascot-glow"
             />
@@ -54,7 +67,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{cmsSections.hero.badgeText}</span>
+          <span>{badgeText}</span>
         </motion.div>
 
         {/* Main Heading */}
@@ -64,7 +77,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]"
         >
-          {cmsSections.hero.title}
+          {title}
         </motion.h1>
 
         {/* Sub Heading */}
@@ -74,7 +87,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-6 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-normal leading-relaxed"
         >
-          {cmsSections.hero.description}
+          {description}
         </motion.p>
 
         {/* Action Buttons */}
@@ -89,7 +102,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             className="px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs backdrop-blur-md transition-all hover:border-purple-400/50 flex items-center justify-center gap-2 group shadow-lg"
           >
             <Layers className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-            {cmsSections.hero.secondaryBtnText}
+            {secondaryBtnText}
           </button>
 
           <button
@@ -97,18 +110,18 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4 text-cyan-300" />
-            {cmsSections.hero.primaryBtnText}
+            {primaryBtnText}
             <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
           </button>
 
           <a
-            href={cmsSections.contact.discordInvite}
+            href={discordInvite}
             target="_blank"
             rel="noopener noreferrer"
             className="px-7 py-3.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
           >
             <MessageSquare className="w-4 h-4 text-indigo-400" />
-            {cmsSections.hero.discordBtnText}
+            {discordBtnText}
             <ExternalLink className="w-3.5 h-3.5 opacity-70" />
           </a>
         </motion.div>

@@ -7,7 +7,18 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
-  const { websiteSettings, contactSettings } = useStore();
+  const store = useStore();
+  const cmsSections = store?.cmsSections;
+  const webSettings = store?.websiteSettings;
+  const contact = cmsSections?.contact || store?.contactSettings;
+  const footer = cmsSections?.footer;
+
+  const mascotUrl = cmsSections?.hero?.mascotUrl || webSettings?.mascotUrl || '/zyt_mascot.jpg';
+  const tagline = footer?.tagline || webSettings?.footerText || 'Building Professional Minecraft Experiences.';
+  const discordInvite = contact?.discordInvite || 'https://discord.gg';
+  const email = contact?.email || 'contact@zytstudio.com';
+  const githubLink = 'https://github.com';
+  const youtubeLink = 'https://youtube.com';
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -22,7 +33,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 via-purple-600 to-cyan-500 p-[1.5px]">
                 <img
-                  src={websiteSettings.mascotUrl}
+                  src={mascotUrl}
                   alt="Zyt Mascot Logo"
                   className="w-full h-full object-cover rounded-[10px]"
                 />
@@ -33,13 +44,13 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             </div>
 
             <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-              {websiteSettings.footerText} Specialized in custom Paper, Spigot, and Folia plugin development with enterprise-grade stability.
+              {tagline} Specialized in custom Paper, Spigot, and Folia plugin development with enterprise-grade stability.
             </p>
 
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
               <a
-                href={contactSettings.discordInvite}
+                href={discordInvite}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
@@ -48,14 +59,14 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 <MessageSquare className="w-4 h-4" />
               </a>
               <a
-                href={`mailto:${contactSettings.email}`}
+                href={`mailto:${email}`}
                 className="w-9 h-9 rounded-xl bg-white/5 hover:bg-cyan-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
                 aria-label="Email"
               >
                 <Mail className="w-4 h-4" />
               </a>
               <a
-                href={contactSettings.socialLinks.github}
+                href={githubLink}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
@@ -64,7 +75,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 <Globe className="w-4 h-4" />
               </a>
               <a
-                href={contactSettings.socialLinks.youtube}
+                href={youtubeLink}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
@@ -111,7 +122,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
 
         {/* Copyright & Scroll Top Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <p>© 2026 Zyt Studio. All Rights Reserved.</p>
+          <p>{footer?.copyright || '© 2026 Zyt Studio. All Rights Reserved.'}</p>
 
           <div className="flex items-center gap-6">
             <span className="text-gray-500 text-[11px]">Designed for Minecraft Server Owners</span>

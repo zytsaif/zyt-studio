@@ -12,7 +12,12 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
   initialPluginName = '',
   onTriggerToast,
 }) => {
-  const { websiteSettings, contactSettings } = useStore();
+  const store = useStore();
+  const cmsSections = store?.cmsSections;
+  const contact = cmsSections?.contact || store?.contactSettings;
+  const webhookUrl = store?.discordWebhookUrl || store?.websiteSettings?.discordWebhookUrl;
+
+  const responseTime = contact?.responseTime || 'Within 24 Hours';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,16 +59,20 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
     setSubmitted(true);
 
     // Confetti celebration
-    confetti({
-      particleCount: 120,
-      spread: 80,
-      origin: { y: 0.6 },
-    });
+    try {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+      });
+    } catch (err) {
+      console.warn('Confetti animation error:', err);
+    }
 
     // Send Discord Webhook notification if URL configured
-    if (websiteSettings.discordWebhookUrl) {
+    if (webhookUrl) {
       try {
-        await fetch(websiteSettings.discordWebhookUrl, {
+        await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -114,7 +123,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
 
           <div className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-xl bg-cyan-950/40 border border-cyan-800/40 text-cyan-300 text-xs font-semibold">
             <Clock className="w-4 h-4 text-cyan-400 animate-spin-slow" />
-            <span>Estimated Response Time: <strong className="text-white">{contactSettings.responseTime}</strong></span>
+            <span>Estimated Response Time: <strong className="text-white">{responseTime}</strong></span>
           </div>
         </div>
 
@@ -138,7 +147,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                   {ticketId}
                 </div>
                 <div className="text-[11px] text-gray-400">
-                  Our developer will contact you on Discord (<strong className="text-white">{formData.discord}</strong>) or via Email within {contactSettings.responseTime}.
+                  Our developer will contact you on Discord (<strong className="text-white">{formData.discord}</strong>) or via Email within {responseTime}.
                 </div>
               </div>
 

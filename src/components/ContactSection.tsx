@@ -7,21 +7,30 @@ interface ContactSectionProps {
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }) => {
-  const { contactSettings } = useStore();
+  const store = useStore();
+  const cmsContact = store?.cmsSections?.contact;
+  const legacyContact = store?.contactSettings;
+
+  const discordUsername = cmsContact?.discordUsername || legacyContact?.discordUsername || 'ZytStudio#0001';
+  const discordInvite = cmsContact?.discordInvite || legacyContact?.discordInvite || 'https://discord.gg';
+  const email = cmsContact?.email || legacyContact?.email || 'contact@zytstudio.com';
+  const responseTime = cmsContact?.responseTime || legacyContact?.responseTime || 'Within 24 Hours';
+  const businessHours = cmsContact?.businessHours || legacyContact?.businessHours || '24/7 Global Support & Monitoring';
+
   const [copiedDiscord, setCopiedDiscord] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleCopyDiscord = () => {
-    navigator.clipboard.writeText(contactSettings.discordUsername);
+    navigator.clipboard.writeText(discordUsername);
     setCopiedDiscord(true);
-    onTriggerToast(`Discord copied: ${contactSettings.discordUsername}`);
+    onTriggerToast(`Discord copied: ${discordUsername}`);
     setTimeout(() => setCopiedDiscord(false), 2500);
   };
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText(contactSettings.email);
+    navigator.clipboard.writeText(email);
     setCopiedEmail(true);
-    onTriggerToast(`Email copied: ${contactSettings.email}`);
+    onTriggerToast(`Email copied: ${email}`);
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
@@ -47,14 +56,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }
             <span className="text-xs text-gray-400 font-mono flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-purple-400" /> Response Time:
             </span>
-            <span className="text-xs font-bold text-cyan-400 font-mono">{contactSettings.responseTime}</span>
+            <span className="text-xs font-bold text-cyan-400 font-mono">{responseTime}</span>
           </div>
 
           <div className="p-4 rounded-2xl glass-card border border-cyan-500/30 flex items-center justify-between">
             <span className="text-xs text-gray-400 font-mono flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" /> Business Hours:
             </span>
-            <span className="text-xs font-bold text-emerald-400 font-mono">{contactSettings.businessHours}</span>
+            <span className="text-xs font-bold text-emerald-400 font-mono">{businessHours}</span>
           </div>
         </div>
 
@@ -82,7 +91,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between mb-6">
                 <div>
                   <div className="text-[11px] text-gray-400">Discord Handle</div>
-                  <div className="text-base font-bold text-white font-mono">{contactSettings.discordUsername}</div>
+                  <div className="text-base font-bold text-white font-mono">{discordUsername}</div>
                 </div>
 
                 <button
@@ -96,7 +105,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }
             </div>
 
             <a
-              href={contactSettings.discordInvite}
+              href={discordInvite}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
@@ -128,7 +137,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between mb-6">
                 <div>
                   <div className="text-[11px] text-gray-400">Official Email</div>
-                  <div className="text-base font-bold text-white font-mono">{contactSettings.email}</div>
+                  <div className="text-base font-bold text-white font-mono">{email}</div>
                 </div>
 
                 <button
@@ -142,7 +151,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onTriggerToast }
             </div>
 
             <a
-              href={`mailto:${contactSettings.email}`}
+              href={`mailto:${email}`}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30"
             >
               <Send className="w-4 h-4 text-white" />
