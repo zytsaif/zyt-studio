@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
+import { InlineEditableText } from './InlineEditableText';
+import { EditableImage } from './EditableImage';
 import { ArrowRight, Sparkles, Code, Cpu, ShieldCheck, Star, Terminal, Layers, MessageSquare, ExternalLink } from 'lucide-react';
 
 interface HeroProps {
@@ -14,6 +16,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
   const hero = cmsSections?.hero;
   const webSettings = store?.websiteSettings;
   const contact = cmsSections?.contact || store?.contactSettings;
+  const updateSection = store?.updateSection;
 
   const title = hero?.title || webSettings?.heroTitle || 'Professional Minecraft Plugin Development';
   const description = hero?.description || webSettings?.heroSubheading || 'Custom Plugins, Premium Systems, Server Solutions & Minecraft Development Services engineered for 20 TPS performance.';
@@ -47,12 +50,13 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           className="relative inline-block mb-8"
         >
           <div className="relative w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-3xl p-[2px] bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 shadow-2xl shadow-purple-600/30">
-            <img
+            <EditableImage
               src={mascotUrl}
               alt="Zyt Studio 3D Mascot"
+              onSave={(newUrl) => updateSection?.('hero', { mascotUrl: newUrl })}
               className="w-full h-full object-cover rounded-[22px] border border-white/20 animate-mascot-glow"
             />
-            <span className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-lg">
+            <span className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-lg pointer-events-none">
               3D Mascot
             </span>
           </div>
@@ -67,7 +71,10 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
         >
           <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{badgeText}</span>
+          <InlineEditableText
+            value={badgeText}
+            onSave={(val) => updateSection?.('hero', { badgeText: val })}
+          />
         </motion.div>
 
         {/* Main Heading */}
@@ -77,18 +84,26 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]"
         >
-          {title}
+          <InlineEditableText
+            value={title}
+            onSave={(val) => updateSection?.('hero', { title: val })}
+            tagName="span"
+          />
         </motion.h1>
 
         {/* Sub Heading */}
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-6 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-normal leading-relaxed"
         >
-          {description}
-        </motion.p>
+          <InlineEditableText
+            value={description}
+            multiline
+            onSave={(val) => updateSection?.('hero', { description: val })}
+          />
+        </motion.div>
 
         {/* Action Buttons */}
         <motion.div
@@ -102,7 +117,10 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             className="px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs backdrop-blur-md transition-all hover:border-purple-400/50 flex items-center justify-center gap-2 group shadow-lg"
           >
             <Layers className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-            {secondaryBtnText}
+            <InlineEditableText
+              value={secondaryBtnText}
+              onSave={(val) => updateSection?.('hero', { secondaryBtnText: val })}
+            />
           </button>
 
           <button
@@ -110,7 +128,10 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4 text-cyan-300" />
-            {primaryBtnText}
+            <InlineEditableText
+              value={primaryBtnText}
+              onSave={(val) => updateSection?.('hero', { primaryBtnText: val })}
+            />
             <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
           </button>
 
@@ -121,7 +142,10 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
             className="px-7 py-3.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
           >
             <MessageSquare className="w-4 h-4 text-indigo-400" />
-            {discordBtnText}
+            <InlineEditableText
+              value={discordBtnText}
+              onSave={(val) => updateSection?.('hero', { discordBtnText: val })}
+            />
             <ExternalLink className="w-3.5 h-3.5 opacity-70" />
           </a>
         </motion.div>

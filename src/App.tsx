@@ -15,6 +15,7 @@ import { PaymentSection } from './components/PaymentSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminCMS } from './components/AdminCMS';
+import { FloatingAdminBar } from './components/FloatingAdminBar';
 import { ToastNotification } from './components/ToastNotification';
 import type { PluginItem } from './data/pluginsData';
 
@@ -108,6 +109,12 @@ function AppContent() {
 
       {/* Footer */}
       <Footer onOpenAdmin={() => setCmsOpen(true)} />
+
+      {/* Floating Framer/Webflow Admin Control Toolbar */}
+      <FloatingAdminBar
+        onOpenFullCMS={() => setCmsOpen(true)}
+        onTriggerToast={triggerToast}
+      />
 
       {/* WordPress-Style Full Site CMS Panel */}
       <AdminCMS

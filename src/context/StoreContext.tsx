@@ -118,6 +118,15 @@ interface StoreContextType {
   editorPin: string;
   discordWebhookUrl: string;
 
+  // Visual Live Editor State & History
+  isEditMode: boolean;
+  setIsEditMode: (val: boolean) => void;
+  toggleEditMode: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+
   // Backward Compatibility Properties
   contactSettings: CMSSections['contact'];
   paymentSettings: CMSSections['payment'];
@@ -405,14 +414,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('zyt_discord_webhook', url);
   };
 
+  // Visual Live Editor State & History Stack
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [history, setHistory] = useState<CMSSections[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+
+  const toggleEditMode = () => setIsEditMode((prev) => !prev);
+
+  const recordHistory = (newSections: CMSSections) => {
+    setHistory((prev) => {
+      const truncated = prev.slice(0, historyIndex + 1);
+      return [...truncated, newSections].slice(-20); // Keep last 20 steps
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 19));
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prevIndex = historyIndex - 1;
+      setHistoryIndex(prevIndex);
+      setCmsSections(history[prevIndex]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextIndex = historyIndex + 1;
+      setHistoryIndex(nextIndex);
+      setCmsSections(history[nextIndex]);
+    }
+  };
+
   const updateSection = <K extends keyof CMSSections>(section: K, content: Partial<CMSSections[K]>) => {
-    setCmsSections((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        ...content,
-      },
-    }));
+    setCmsSections((prev) => {
+      const updated = {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          ...content,
+        },
+      };
+      recordHistory(updated);
+      return updated;
+    });
   };
 
   const updateThemeConfig = (config: Partial<ThemeConfig>) => {
@@ -634,6 +678,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         adminPin,
         editorPin,
         discordWebhookUrl,
+        isEditMode,
+        setIsEditMode,
+        toggleEditMode,
+        undo,
+        redo,
+        canUndo: historyIndex > 0,
+        canRedo: historyIndex < history.length - 1,
         setIsAdmin,
         loginRole,
         logoutAdmin,

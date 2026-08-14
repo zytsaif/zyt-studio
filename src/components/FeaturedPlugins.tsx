@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
 import type { PluginItem } from '../data/pluginsData';
-import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Filter, Eye } from 'lucide-react';
+import { InlineEditableText } from './InlineEditableText';
+import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Filter, Eye, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface FeaturedPluginsProps {
   onSelectPlugin: (plugin: PluginItem) => void;
@@ -13,10 +14,10 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
   onSelectPlugin,
   onOrderCustom,
 }) => {
-  const { plugins } = useStore();
+  const { plugins, updatePlugin, deletePlugin, addPlugin, reorderPlugins, isEditMode } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  const categories = ['All', 'Utility', 'PvP & Games', 'SMP & Economy'];
+  const categories = ['All', 'Utility', 'PvP & Games', 'SMP & Economy', 'Recording / Cinematic Tools'];
 
   const filteredPlugins =
     selectedCategory === 'All'
@@ -33,6 +34,36 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
       case 'ShieldCheck': return ShieldCheck;
       default: return Sparkles;
     }
+  };
+
+  const movePlugin = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= plugins.length) return;
+    const updated = [...plugins];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    reorderPlugins(updated);
+  };
+
+  const handleAddNewPlugin = () => {
+    const newPlugin: PluginItem = {
+      id: 'plugin_' + Date.now(),
+      name: 'Mocap Studio',
+      tagline: 'Cinematic Motion Capture & Player Keyframe Suite',
+      description: 'Cinematic motion capture, camera path recording, & replay tools for Minecraft animation & content creation.',
+      category: 'Recording / Cinematic Tools',
+      minecraftVersion: '1.18 - 1.20.6',
+      price: '$39.99',
+      rating: 5.0,
+      salesCount: 1,
+      iconName: 'Video',
+      features: ['Motion Capture Pose Recording', '60 FPS Keyframe Interpolation', 'Export to Blockbench & Blender'],
+      fullFeatures: ['Motion Capture Pose Recording', '60 FPS Keyframe Interpolation', 'Export to Blockbench & Blender'],
+      commands: [{ command: '/mocap record', permission: 'mocap.admin', description: 'Start recording' }],
+      configSnippet: 'mocap:\n  fps: 60',
+    };
+    addPlugin(newPlugin);
   };
 
   return (
@@ -54,13 +85,25 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
             High-performance, battle-tested plugin suites created for top Minecraft servers and content creators worldwide.
           </p>
 
+          {/* Add Plugin Quick Action in Edit Mode */}
+          {isEditMode && (
+            <div className="mt-4">
+              <button
+                onClick={handleAddNewPlugin}
+                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center gap-2 mx-auto animate-bounce"
+              >
+                <Plus className="w-4 h-4" /> Add Mocap Studio / New Plugin Card
+              </button>
+            </div>
+          )}
+
           {/* Category Filter Tabs */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                className={`px-4 py-2 rounded-xl text-xs font-semibold font-mono transition-all ${
                   selectedCategory === cat
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
                     : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10'
@@ -74,8 +117,8 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
 
         {/* Plugin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredPlugins.map((plugin, index) => {
-            const IconComp = getIcon(plugin.iconName);
+          {filteredPlugins.map((plugin, idx) => {
+            const IconComponent = getIcon(plugin.iconName);
 
             return (
               <motion.div
@@ -83,68 +126,97 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="glass-card rounded-3xl p-6 flex flex-col justify-between group relative overflow-hidden"
+                transition={{ duration: 0.5, delay: idx * 0.08 }}
+                className="glass-card rounded-3xl p-7 flex flex-col justify-between border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 group hover:shadow-2xl hover:shadow-purple-600/10 relative"
               >
-                {/* Top Stripe */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-purple-500 to-cyan-500 opacity-70 group-hover:opacity-100 transition-opacity" />
+                {/* Visual Admin Controls on Card */}
+                {isEditMode && (
+                  <div className="absolute -top-3 -right-3 z-30 flex items-center gap-1 bg-[#090a1a] p-1.5 rounded-xl border border-purple-500/50 shadow-xl">
+                    <button
+                      onClick={() => movePlugin(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-1 rounded bg-white/10 text-cyan-300 disabled:opacity-30"
+                      title="Move Left/Up"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => movePlugin(idx, 'down')}
+                      disabled={idx === plugins.length - 1}
+                      className="p-1 rounded bg-white/10 text-cyan-300 disabled:opacity-30"
+                      title="Move Right/Down"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => deletePlugin(plugin.id)}
+                      className="p-1 rounded bg-red-950/80 text-red-300 border border-red-800"
+                      title="Delete Plugin Card"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
 
                 <div>
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600/30 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                      <IconComp className="w-6 h-6 text-cyan-400" />
+                  {/* Top Badge & Price */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <IconComponent className="w-6 h-6 text-purple-400" />
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-xs text-gray-400">Price</div>
-                      <div className="text-lg font-bold text-white font-mono text-glow-cyan">
-                        {plugin.price}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Plugin Name & Version */}
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors font-mono">
-                      {plugin.name}
-                    </h3>
-                    <span className="text-[10px] font-mono bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded">
-                      {plugin.minecraftVersion}
+                    <span className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-purple-950/80 text-purple-300 border border-purple-800/40">
+                      <InlineEditableText
+                        value={plugin.price}
+                        onSave={(val) => updatePlugin({ ...plugin, price: val })}
+                      />
                     </span>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-xs text-gray-400 leading-relaxed mb-6 line-clamp-3">
-                    {plugin.description}
-                  </p>
+                  {/* Plugin Name */}
+                  <h3 className="text-2xl font-extrabold text-white font-mono mb-2 group-hover:text-purple-300 transition-colors">
+                    <InlineEditableText
+                      value={plugin.name}
+                      onSave={(val) => updatePlugin({ ...plugin, name: val })}
+                      tagName="span"
+                    />
+                  </h3>
 
-                  {/* Features Bullet Points */}
-                  <div className="space-y-2 mb-6">
-                    {plugin.features.map((feature, fIdx) => (
-                      <div key={fIdx} className="flex items-center gap-2 text-xs text-gray-300">
-                        <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <span className="truncate">{feature}</span>
-                      </div>
-                    ))}
+                  {/* Description */}
+                  <div className="text-xs text-gray-300 leading-relaxed mb-6">
+                    <InlineEditableText
+                      value={plugin.description}
+                      multiline
+                      onSave={(val) => updatePlugin({ ...plugin, description: val })}
+                    />
                   </div>
+
+                  {/* Feature Checklist */}
+                  <ul className="space-y-2 mb-8">
+                    {plugin.features.map((feat, fIdx) => (
+                      <li key={fIdx} className="text-xs text-gray-400 flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* Footer Buttons */}
-                <div className="pt-4 border-t border-white/10 flex items-center gap-3">
+                {/* Bottom Actions */}
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
                   <button
                     onClick={() => onSelectPlugin(plugin)}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
                   >
-                    <Eye className="w-3.5 h-3.5 text-purple-400" />
-                    View Details
+                    <Eye className="w-3.5 h-3.5 text-cyan-400" /> View Specs
                   </button>
 
                   <button
                     onClick={() => onOrderCustom(plugin.name)}
-                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold text-xs hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center"
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1 shadow-lg shadow-purple-600/30"
                   >
-                    Order Now
+                    Order
+                    <ArrowRight className="w-3.5 h-3.5 text-white" />
                   </button>
                 </div>
               </motion.div>
