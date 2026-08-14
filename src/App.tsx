@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StoreProvider } from './context/StoreContext';
 import { ParticleBackground } from './components/ParticleBackground';
 import { CursorGlow } from './components/CursorGlow';
+import { CustomCursor } from './components/CustomCursor';
+import { ScrollProgressBar } from './components/ScrollProgressBar';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -91,6 +93,12 @@ function AppContent() {
 
   return (
     <div className="relative min-h-screen bg-[#05050a] text-gray-100 overflow-hidden font-sans selection:bg-purple-500 selection:text-white">
+      {/* Scroll Progress Bar at Top */}
+      <ScrollProgressBar />
+
+      {/* Animated Custom Cursor & Trail Particles */}
+      <CustomCursor />
+
       {/* Dynamic Cursor Ambient Spotlight */}
       <CursorGlow />
 

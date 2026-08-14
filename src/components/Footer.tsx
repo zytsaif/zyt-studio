@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { MessageSquare, Mail, Globe, Play, ArrowUp, Lock, Sparkles } from 'lucide-react';
+import { MessageSquare, Mail, Globe, Play, ArrowUp, Lock } from 'lucide-react';
 
 interface FooterProps {
   onOpenAdmin: () => void;
@@ -25,7 +25,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
   };
 
   return (
-    <footer className="relative bg-[#03040a] z-10 border-t border-purple-900/30 pt-16 pb-12 text-gray-400">
+    <footer className="relative bg-[#03040a] z-10 pt-16 pb-12 text-gray-400 overflow-hidden">
+      {/* Animated Gradient Neon Accent Line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-red-500 via-purple-500 via-cyan-400 to-emerald-400 shadow-[0_0_12px_#a855f7]" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           {/* Brand Col with 3D Mascot */}
@@ -53,14 +56,14 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 href={discordInvite}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110 shadow-md"
                 aria-label="Discord"
               >
                 <MessageSquare className="w-4 h-4 text-indigo-400" />
               </a>
               <a
                 href={`mailto:${email}`}
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-cyan-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-cyan-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110 shadow-md"
                 aria-label="Email"
               >
                 <Mail className="w-4 h-4 text-cyan-400" />
@@ -69,7 +72,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 href={githubLink}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110 shadow-md"
                 aria-label="Website"
               >
                 <Globe className="w-4 h-4 text-purple-400" />
@@ -78,7 +81,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 href={youtubeLink}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-all hover:scale-110 shadow-md"
                 aria-label="Youtube"
               >
                 <Play className="w-4 h-4 text-red-400 fill-current" />
@@ -129,7 +132,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
 
             <button
               onClick={scrollToTop}
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-purple-600/30 text-gray-300 hover:text-white border border-white/10 hover:border-purple-500/50 transition-all flex items-center gap-1"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-purple-600/30 text-gray-300 hover:text-white border border-white/10 hover:border-purple-500/50 transition-all flex items-center gap-1 shadow-lg"
               aria-label="Scroll to top"
             >
               <ArrowUp className="w-4 h-4 text-cyan-400" />
