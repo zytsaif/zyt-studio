@@ -3,7 +3,7 @@ export interface PluginItem {
   name: string;
   tagline: string;
   description: string;
-  category: 'Utility' | 'PvP & Games' | 'SMP & Economy' | 'Featured' | 'Recording / Cinematic Tools';
+  category: 'Utility' | 'PvP & Games' | 'SMP & Economy' | 'Featured' | 'Recording / Cinematic Tools' | 'Premium Plugin';
   minecraftVersion: string;
   price: string;
   rating: number;
@@ -13,45 +13,44 @@ export interface PluginItem {
   commands: { command: string; permission: string; description: string }[];
   configSnippet: string;
   iconName: string;
+  imageUrl?: string;
+  downloadUrl?: string;
 }
 
 export const PLUGINS_DATA: PluginItem[] = [
   {
-    id: 'mocap-studio',
-    name: 'Mocap Studio',
-    tagline: 'Cinematic Motion Capture & Player Keyframe Suite',
-    description: 'Cinematic motion capture, camera path recording, & replay tools for Minecraft animation & content creation.',
-    category: 'Recording / Cinematic Tools',
+    id: 'mocap',
+    name: 'Mocap',
+    tagline: 'Professional Motion Capture & Cinematic Animation Plugin',
+    description: 'Professional Minecraft motion capture and cinematic animation plugin with camera paths, emotes, NPC animation and recording tools.',
+    category: 'Premium Plugin',
     minecraftVersion: '1.18 - 1.20.6',
     price: '$39.99',
     rating: 5.0,
-    salesCount: 88,
+    salesCount: 120,
     iconName: 'Video',
+    imageUrl: '/zyt_mascot.jpg',
+    downloadUrl: 'https://zytstudio.com/download/mocap.jar',
     features: [
-      'Real-time Player Pose & Armature Motion Capture',
-      'Smooth 60 FPS Keyframe Curve Interpolation',
-      'Export Animations to Blockbench & Blender Formats',
-      'Multi-Actor Synchronized Scene Playback'
+      'Camera Paths & Bezier Interpolation',
+      'Player Emotes & Custom NPC Animation',
+      'Recording Tools & Replay Buffer',
+      'Sub-tick Motion Capture Tracking'
     ],
     fullFeatures: [
-      'Real-time Player Pose & Armature Motion Capture with sub-tick precision',
-      'Smooth 60 FPS Keyframe Curve Interpolation for cinematic scenes',
-      'Export Animations directly to Blockbench & Blender Formats (.json / .fbx)',
-      'Multi-Actor Synchronized Scene Playback for movie & trailer production',
-      'Custom NPC Puppet Control with dynamic head tracking',
-      'PacketEvents NMS optimization for 0 TPS lag during recording'
+      'Camera Paths & Bezier Interpolation with keyframe speed control',
+      'Player Emotes & Custom NPC Animation puppet control',
+      'Recording Tools & Replay Buffer with instant file export',
+      'Sub-tick Motion Capture Tracking with PacketEvents NMS optimization'
     ],
     commands: [
-      { command: '/mocap record <scene>', permission: 'mocap.admin', description: 'Start recording player motion capture' },
-      { command: '/mocap play <scene>', permission: 'mocap.use', description: 'Play recorded motion capture scene' },
-      { command: '/mocap export <scene>', permission: 'mocap.export', description: 'Export animation to Blockbench format' }
+      { command: '/mocap record', permission: 'mocap.admin', description: 'Start recording motion capture' },
+      { command: '/mocap play', permission: 'mocap.use', description: 'Play recorded cinematic' }
     ],
-    configSnippet: `# Mocap Studio Configuration
+    configSnippet: `# Mocap Configuration
 mocap:
-  fps_sample_rate: 60
-  auto_keyframe_smoothing: true
-  export_format: "blockbench"
-  max_actors_per_scene: 16`
+  camera_paths: true
+  recording_fps: 60`
   },
   {
     id: 'rechelp',
