@@ -6,6 +6,7 @@ import type { PortfolioProject } from '../data/portfolioData';
 import type { ServiceItem } from '../data/servicesData';
 import { ImageUploader } from './ImageUploader';
 import { EditPluginModal } from './EditPluginModal';
+import { SUPABASE_SQL_SCHEMA } from '../lib/supabase';
 import {
   LayoutDashboard,
   Eye,
@@ -73,6 +74,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
     reviews,
     orderRequests,
     ticketChats,
+    supabaseUrl,
+    supabaseAnonKey,
+    isSupabaseConnected,
+    setSupabaseConfig,
+    syncSupabaseRequests,
     updateRequestStatus,
     addProgressNote,
     deleteOrderRequest,
@@ -135,6 +141,10 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
   const [adminNoteInput, setAdminNoteInput] = useState('');
   const [adminRequestSearch, setAdminRequestSearch] = useState('');
   const [adminRequestFilter, setAdminRequestFilter] = useState('All');
+
+  // Supabase Connection Inputs
+  const [supaUrlInput, setSupaUrlInput] = useState(supabaseUrl);
+  const [supaKeyInput, setSupaKeyInput] = useState(supabaseAnonKey);
 
   if (!isOpen) return null;
 
@@ -1165,7 +1175,103 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
 
               {activeTab === 'settings' && (
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white font-mono">Global Settings</h3>
+                  <h3 className="text-xl font-bold text-white font-mono">Global Settings & Shared Database</h3>
+
+                  {/* SUPABASE REALTIME DATABASE SETUP CARD */}
+                  <div className="glass-card p-6 rounded-2xl border border-purple-500/40 space-y-4 text-xs">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-cyan-400" /> Supabase Realtime Shared Database Connection
+                        </h4>
+                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                          Connect your Supabase project to synchronize orders live across all browsers and devices.
+                        </p>
+                      </div>
+
+                      {isSupabaseConnected ? (
+                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> ⚡ DB Live & Synced
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-950 text-amber-400 border border-amber-800">
+                          ⚠️ Local Fallback (Enter Credentials Below)
+                        </span>
+                      )}
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        setSupabaseConfig(supaUrlInput.trim(), supaKeyInput.trim());
+                        syncSupabaseRequests();
+                        onTriggerToast('Saved Supabase configuration! Testing live DB sync...');
+                      }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="text-gray-300 font-semibold font-mono">Supabase Project URL</label>
+                        <input
+                          type="text"
+                          value={supaUrlInput}
+                          onChange={(e) => setSupaUrlInput(e.target.value)}
+                          placeholder="e.g. https://your-project-id.supabase.co"
+                          className="w-full p-3 rounded-xl glass-input font-mono mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-gray-300 font-semibold font-mono">Supabase Public Anon Key</label>
+                        <input
+                          type="password"
+                          value={supaKeyInput}
+                          onChange={(e) => setSupaKeyInput(e.target.value)}
+                          placeholder="e.g. eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                          className="w-full p-3 rounded-xl glass-input font-mono mt-1"
+                        />
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          type="submit"
+                          className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30"
+                        >
+                          Save & Connect Live Database
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            syncSupabaseRequests();
+                            onTriggerToast('Re-synced database table plugin_requests!');
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 font-bold text-xs flex items-center gap-1.5"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Sync Database Now
+                        </button>
+                      </div>
+                    </form>
+
+                    {/* SQL SCHEMA MIGRATION SCRIPT CARD */}
+                    <div className="pt-4 border-t border-white/10 space-y-2">
+                      <div className="text-xs font-bold text-purple-300 font-mono">Supabase SQL Editor Setup Migration Script:</div>
+                      <p className="text-[11px] text-gray-400">
+                        Copy this SQL script into your Supabase SQL Editor to automatically create the <code className="text-cyan-300 font-mono">plugin_requests</code> table with Realtime enabled:
+                      </p>
+                      <div className="relative bg-[#030409] p-3 rounded-xl border border-white/10 overflow-x-auto">
+                        <pre className="text-[10px] text-gray-300 font-mono whitespace-pre-wrap">{SUPABASE_SQL_SCHEMA}</pre>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
+                            onTriggerToast('Copied SQL Schema to clipboard!');
+                          }}
+                          className="absolute top-2 right-2 px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-mono font-bold"
+                        >
+                          Copy SQL
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="glass-card p-6 rounded-2xl border border-purple-500/30 space-y-4 text-xs">
                     <div>
                       <label className="text-gray-300 font-semibold">Discord Webhook URL</label>
