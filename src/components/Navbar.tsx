@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
+import { MagneticButton } from './MagneticButton';
 import { Sparkles, Menu, X, ArrowRight, Lock, Disc as DiscordIcon } from 'lucide-react';
 
 interface NavbarProps {
@@ -42,13 +43,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
 
-      // Simple active section detection based on element positions
       const sectionIds = links.map((l) => l.href.replace('#', ''));
       for (const id of sectionIds) {
         const elem = document.getElementById(id);
         if (elem) {
           const rect = elem.getBoundingClientRect();
-          if (rect.top <= 200 && rect.bottom >= 200) {
+          if (rect.top <= 220 && rect.bottom >= 220) {
             setActiveSection(id);
             break;
           }
@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
-          ? 'bg-[#050612]/85 backdrop-blur-2xl border-b border-purple-500/20 py-3 shadow-2xl shadow-purple-950/40'
+          ? 'bg-[#050612]/90 backdrop-blur-2xl border-b border-purple-500/30 py-3 shadow-2xl shadow-purple-950/40'
           : 'bg-transparent py-6'
       }`}
     >
@@ -97,8 +97,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
           </div>
         </a>
 
-        {/* Desktop Glassmorphism Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1 bg-[#090b1c]/70 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 shadow-inner">
+        {/* Desktop Navigation Links with Active Layout Pill */}
+        <nav className="hidden lg:flex items-center gap-1 bg-[#090b1c]/80 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 shadow-inner relative">
           {links.map((link) => {
             const id = link.href.replace('#', '');
             const isActive = activeSection === id;
@@ -106,19 +106,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
               <a
                 key={link.name}
                 href={link.href}
-                className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 font-mono ${
-                  isActive
-                    ? 'text-white font-bold bg-gradient-to-r from-purple-600/60 to-cyan-600/60 border border-purple-400/40 shadow-lg shadow-purple-500/20'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 font-mono z-10 ${
+                  isActive ? 'text-white font-bold' : 'text-gray-300 hover:text-white'
                 }`}
               >
+                {isActive && (
+                  <motion.span
+                    layoutId="activeNavbarPill"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    className="absolute inset-0 bg-gradient-to-r from-purple-600/70 to-cyan-600/70 rounded-full border border-purple-400/50 -z-10 shadow-lg shadow-purple-500/25"
+                  />
+                )}
                 {link.name}
               </a>
             );
           })}
         </nav>
 
-        {/* Desktop Action Buttons */}
+        {/* Action Buttons with Magnetic Attractions */}
         <div className="hidden lg:flex items-center gap-3">
           <a
             href={discordInvite}
@@ -143,17 +148,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
             {isAdmin ? 'Admin CMS' : '/admin'}
           </button>
 
-          <button
+          <MagneticButton
             onClick={onOrderClick}
-            className="relative group overflow-hidden rounded-xl p-[1px] font-semibold text-xs transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl shadow-purple-600/30 btn-shimmer"
+            className="rounded-xl p-[1px] font-semibold text-xs shadow-xl shadow-purple-600/30"
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 rounded-xl group-hover:opacity-100 opacity-90 transition-opacity"></span>
+            <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 rounded-xl"></span>
             <span className="relative px-5 py-2.5 rounded-[11px] bg-[#0b0c1a] group-hover:bg-opacity-80 flex items-center gap-2 text-white font-medium transition-all font-mono">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
               {orderBtnText}
               <ArrowRight className="w-3.5 h-3.5 text-purple-400 group-hover:translate-x-1 transition-transform" />
             </span>
-          </button>
+          </MagneticButton>
         </div>
 
         {/* Mobile Hamburger */}

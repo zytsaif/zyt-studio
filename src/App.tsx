@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StoreProvider } from './context/StoreContext';
 import { ParticleBackground } from './components/ParticleBackground';
+import { CursorGlow } from './components/CursorGlow';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -90,6 +91,9 @@ function AppContent() {
 
   return (
     <div className="relative min-h-screen bg-[#05050a] text-gray-100 overflow-hidden font-sans selection:bg-purple-500 selection:text-white">
+      {/* Dynamic Cursor Ambient Spotlight */}
+      <CursorGlow />
+
       {/* 3D Mascot Loading Screen */}
       <LoadingScreen />
 

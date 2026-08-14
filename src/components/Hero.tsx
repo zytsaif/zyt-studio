@@ -4,6 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { InlineEditableText } from './InlineEditableText';
 import { EditableImage } from './EditableImage';
 import { AnimatedCounter } from './AnimatedCounter';
+import { MagneticButton } from './MagneticButton';
 import { ArrowRight, Sparkles, Code, Cpu, ShieldCheck, Star, Terminal, Layers, MessageSquare, ExternalLink } from 'lucide-react';
 
 interface HeroProps {
@@ -126,16 +127,14 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
           />
         </motion.div>
 
-        {/* Action Buttons with Interactive Hover & Micro Animations */}
+        {/* Action Buttons with Interactive Magnetic Mouse Attraction */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-5"
         >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <MagneticButton
             onClick={onViewWorkClick}
             className="px-7 py-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs font-mono backdrop-blur-xl transition-all hover:border-purple-400/60 flex items-center justify-center gap-2 group shadow-xl"
           >
@@ -144,11 +143,9 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
               value={secondaryBtnText}
               onSave={(val) => updateSection?.('hero', { secondaryBtnText: val })}
             />
-          </motion.button>
+          </MagneticButton>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <MagneticButton
             onClick={onOrderClick}
             className="px-8 py-4 rounded-2xl bg-gradient-to-r from-red-500 via-purple-600 to-cyan-500 text-white font-extrabold text-xs font-mono shadow-2xl shadow-purple-600/40 hover:shadow-purple-500/60 transition-all flex items-center justify-center gap-2.5 btn-shimmer group"
           >
@@ -158,15 +155,13 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
               onSave={(val) => updateSection?.('hero', { primaryBtnText: val })}
             />
             <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1.5 transition-transform duration-300" />
-          </motion.button>
+          </MagneticButton>
 
-          <motion.a
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <a
             href={discordInvite}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-7 py-4 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 hover:text-white font-bold text-xs font-mono transition-all flex items-center justify-center gap-2 shadow-xl group"
+            className="px-7 py-4 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 hover:text-white font-bold text-xs font-mono transition-all flex items-center justify-center gap-2 shadow-xl group hover:scale-105 active:scale-95"
           >
             <MessageSquare className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
             <InlineEditableText
@@ -174,7 +169,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
               onSave={(val) => updateSection?.('hero', { discordBtnText: val })}
             />
             <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-          </motion.a>
+          </a>
         </motion.div>
 
         {/* Plugin Diagnostic Terminal */}
