@@ -20,7 +20,9 @@ import {
   XCircle,
   ChevronRight,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert,
+  Lock
 } from 'lucide-react';
 
 interface RequestsPortalModalProps {
@@ -41,6 +43,9 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     updateRequestStatus,
     isAdmin,
     cmsSections,
+    clientOwnerId,
+    getUserRequests,
+    canAccessTicket,
   } = useStore();
 
   const [activeFilter, setActiveFilter] = useState<string>('All');
@@ -52,9 +57,13 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
 
   const discordInvite = cmsSections?.contact?.discordInvite || 'https://discord.gg';
 
-  const pendingCount = orderRequests.filter((r) => r.status === 'Pending').length;
+  // Strictly filter requests based on user permissions:
+  // Normal Users: ONLY see tickets where ownerId === clientOwnerId
+  // Admins: See ALL tickets
+  const accessibleRequests = getUserRequests();
+  const pendingCount = accessibleRequests.filter((r) => r.status === 'Pending').length;
 
-  const filteredRequests = orderRequests.filter((req) => {
+  const filteredRequests = accessibleRequests.filter((req) => {
     const matchesFilter = activeFilter === 'All' || req.status === activeFilter;
     const matchesSearch =
       !searchTicketId ||
@@ -85,6 +94,12 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     e.preventDefault();
     if (!chatInput.trim() || !selectedRequest) return;
 
+    // Security Check: Verify permission before adding message
+    if (!canAccessTicket(selectedRequest.id)) {
+      onTriggerToast('Access Denied: You do not own this ticket.');
+      return;
+    }
+
     addChatMessage({
       requestId: selectedRequest.id,
       sender: isAdmin ? 'Admin' : 'Client',
@@ -96,7 +111,7 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
     onTriggerToast('Message sent to ticket chat.');
   };
 
-  const currentChats = selectedRequest
+  const currentChats = selectedRequest && canAccessTicket(selectedRequest.id)
     ? ticketChats.filter((c) => c.requestId === selectedRequest.id)
     : [];
 
@@ -111,14 +126,18 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white font-mono">Client Requests Portal</h3>
+                <h3 className="text-lg font-bold text-white font-mono">
+                  {isAdmin ? 'Admin Client Requests Portal' : 'My Plugin Requests & Tickets'}
+                </h3>
                 {pendingCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
                     {pendingCount} Pending
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-gray-400 font-mono">Track custom plugin tickets & chat in real-time</p>
+              <p className="text-[11px] text-gray-400 font-mono">
+                {isAdmin ? 'All client tickets & full administrative control' : 'Track your submitted orders & chat in real-time'}
+              </p>
             </div>
           </div>
 
@@ -136,16 +155,18 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
           <div className="w-full md:w-2/5 border-r border-white/10 flex flex-col bg-[#04050d] shrink-0">
             {/* Search & Filter Controls */}
             <div className="p-4 border-b border-white/10 space-y-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={searchTicketId}
-                  onChange={(e) => setSearchTicketId(e.target.value)}
-                  placeholder="Enter Ticket ID (e.g. ZYT-849201) or Name..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-xs font-mono"
-                />
-              </div>
+              {isAdmin && (
+                <div className="relative">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={searchTicketId}
+                    onChange={(e) => setSearchTicketId(e.target.value)}
+                    placeholder="Search all tickets (ID, Name, Discord)..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-xs font-mono"
+                  />
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-1.5 text-[11px] font-mono">
                 {['All', 'Pending', 'In Progress', 'Accepted', 'Completed', 'Rejected'].map((st) => (
@@ -167,9 +188,14 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
             {/* Request Item Cards List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {filteredRequests.length === 0 ? (
-                <div className="text-center py-12 text-xs text-gray-400 space-y-2">
-                  <Ticket className="w-8 h-8 mx-auto text-purple-400/50" />
-                  <p>No requests found matching your query.</p>
+                <div className="text-center py-12 text-xs text-gray-400 space-y-3 p-4">
+                  <ShieldAlert className="w-8 h-8 mx-auto text-purple-400/50" />
+                  <p className="font-semibold text-white">No Tickets Found</p>
+                  <p className="text-[11px] text-gray-500">
+                    {isAdmin
+                      ? 'No client requests match your filter.'
+                      : 'You have not submitted any plugin requests yet or no tickets belong to your account.'}
+                  </p>
                 </div>
               ) : (
                 filteredRequests.map((req) => (
@@ -205,136 +231,174 @@ export const RequestsPortalModal: React.FC<RequestsPortalModalProps> = ({
           {/* Right Column: Request Details & Built-in Ticket Chat */}
           <div className="hidden md:flex flex-1 flex-col bg-[#060712] overflow-hidden">
             {selectedRequest ? (
-              <div className="flex flex-1 flex-col h-full overflow-hidden">
-                {/* Details Top Box */}
-                <div className="p-6 border-b border-white/10 bg-[#08091a] space-y-4 shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h4 className="text-xl font-extrabold text-white font-mono">
-                          Ticket #{selectedRequest.id}
-                        </h4>
-                        {getStatusBadge(selectedRequest.status)}
-                      </div>
-                      <span className="text-xs text-gray-400 font-mono">Submitted on {selectedRequest.createdAt}</span>
-                    </div>
-
-                    {/* Admin Actions Bar */}
-                    {isAdmin && (
-                      <div className="flex items-center gap-1.5">
-                        <select
-                          value={selectedRequest.status}
-                          onChange={(e) => {
-                            updateRequestStatus(selectedRequest.id, e.target.value as RequestStatus);
-                            onTriggerToast(`Status updated to ${e.target.value}`);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Accepted">Accepted</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Rejected">Rejected</option>
-                        </select>
-                      </div>
-                    )}
+              !canAccessTicket(selectedRequest.id) ? (
+                /* Access Denied Security Screen */
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-red-950/60 border border-red-800 flex items-center justify-center shadow-2xl">
+                    <Lock className="w-8 h-8 text-red-400" />
                   </div>
-
-                  {/* Customer Info Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                      <div className="text-[10px] text-gray-400">Client Name</div>
-                      <div className="font-bold text-white truncate">{selectedRequest.name}</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                      <div className="text-[10px] text-gray-400">Discord Handle</div>
-                      <div className="font-bold text-indigo-300 truncate">{selectedRequest.discord}</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                      <div className="text-[10px] text-gray-400">Budget Range</div>
-                      <div className="font-bold text-emerald-400">{selectedRequest.budgetFormatted}</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                      <div className="text-[10px] text-gray-400">Desired Deadline</div>
-                      <div className="font-bold text-amber-300 truncate">{selectedRequest.deadline}</div>
-                    </div>
-                  </div>
-
-                  {/* Plugin Idea Description */}
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-200 leading-relaxed font-sans">
-                    <strong className="text-purple-300 block mb-1 font-mono">Plugin Specifications:</strong>
-                    {selectedRequest.pluginIdea}
+                  <div>
+                    <h4 className="text-xl font-bold text-white font-mono">Access Denied</h4>
+                    <p className="text-xs text-gray-300 mt-1 max-w-md leading-relaxed">
+                      You do not have permission to view or chat in ticket <strong className="text-cyan-400">#{selectedRequest.id}</strong>. Tickets are strictly confidential between the client owner and Zyt Studio Developers.
+                    </p>
                   </div>
                 </div>
-
-                {/* Built-in Ticket Chat Workspace */}
-                <div className="flex-1 flex flex-col overflow-hidden bg-[#04050c]">
-                  <div className="px-6 py-2 bg-[#090a18] border-b border-white/10 flex items-center justify-between text-xs text-gray-400 font-mono">
-                    <span className="flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-cyan-400" /> Built-In Live Ticket Chat
-                    </span>
-                    <a
-                      href={discordInvite}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-indigo-300 hover:underline flex items-center gap-1 text-[11px]"
-                    >
-                      <DiscordIcon className="w-3 h-3 text-indigo-400" /> Join Discord for instant audio/screen share
-                    </a>
-                  </div>
-
-                  {/* Chat Messages Log */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {currentChats.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-gray-500 font-mono">
-                        No messages exchanged yet. Send a message below!
+              ) : (
+                <div className="flex flex-1 flex-col h-full overflow-hidden">
+                  {/* Details Top Box */}
+                  <div className="p-6 border-b border-white/10 bg-[#08091a] space-y-4 shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-xl font-extrabold text-white font-mono">
+                            Ticket #{selectedRequest.id}
+                          </h4>
+                          {getStatusBadge(selectedRequest.status)}
+                        </div>
+                        <span className="text-xs text-gray-400 font-mono">Submitted on {selectedRequest.createdAt}</span>
                       </div>
-                    ) : (
-                      currentChats.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col ${
-                            msg.sender === 'Admin' ? 'items-end' : 'items-start'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-1 px-1">
-                            <span className="font-bold text-white">{msg.senderName}</span>
-                            <span>({msg.sender})</span>
-                            <span>• {msg.timestamp}</span>
-                          </div>
 
-                          <div
-                            className={`max-w-lg p-3.5 rounded-2xl text-xs leading-relaxed font-sans shadow-lg ${
-                              msg.sender === 'Admin'
-                                ? 'bg-purple-600 text-white rounded-tr-none'
-                                : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/10'
-                            }`}
+                      {/* Admin Actions Bar */}
+                      {isAdmin && (
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={selectedRequest.status}
+                            onChange={(e) => {
+                              updateRequestStatus(selectedRequest.id, e.target.value as RequestStatus);
+                              onTriggerToast(`Status updated to ${e.target.value}`);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-200 border border-purple-500/50 text-xs font-mono font-bold"
                           >
-                            {msg.text}
+                            <option value="Pending">Pending</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Customer Info Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+                        <div className="text-[10px] text-gray-400">Client Name</div>
+                        <div className="font-bold text-white truncate">{selectedRequest.name}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+                        <div className="text-[10px] text-gray-400">Discord Handle</div>
+                        <div className="font-bold text-indigo-300 truncate">{selectedRequest.discord}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+                        <div className="text-[10px] text-gray-400">Budget Range</div>
+                        <div className="font-bold text-emerald-400">{selectedRequest.budgetFormatted}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+                        <div className="text-[10px] text-gray-400">Desired Deadline</div>
+                        <div className="font-bold text-amber-300 truncate">{selectedRequest.deadline}</div>
+                      </div>
+                    </div>
+
+                    {/* Plugin Idea Description */}
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-200 leading-relaxed font-sans">
+                      <strong className="text-purple-300 block mb-1 font-mono">Plugin Specifications:</strong>
+                      {selectedRequest.pluginIdea}
+                    </div>
+
+                    {/* Discord Invite Banner inside Ticket Page */}
+                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900 border border-indigo-500/40 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <DiscordIcon className="w-5 h-5 text-indigo-400 shrink-0" />
+                        <div>
+                          <div className="font-bold text-white">Need faster communication?</div>
+                          <div className="text-[11px] text-indigo-300 font-mono flex items-center gap-1">
+                            Discord: <strong className="text-white select-all">{discordInvite}</strong>
                           </div>
                         </div>
-                      ))
-                    )}
+                      </div>
+
+                      <a
+                        href={discordInvite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[11px] flex items-center gap-1.5 shrink-0 shadow-md shadow-indigo-600/30"
+                      >
+                        <DiscordIcon className="w-3.5 h-3.5" /> JOIN DISCORD
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Chat Input Form */}
-                  <form onSubmit={handleSendChat} className="p-4 border-t border-white/10 bg-[#070818] flex gap-3">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder={`Type message to ticket #${selectedRequest.id}...`}
-                      className="flex-1 px-4 py-3 rounded-xl glass-input text-xs"
-                    />
-                    <button
-                      type="submit"
-                      className="px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/30"
-                    >
-                      <Send className="w-4 h-4" /> Send
-                    </button>
-                  </form>
+                  {/* Built-in Ticket Chat Workspace */}
+                  <div className="flex-1 flex flex-col overflow-hidden bg-[#04050c]">
+                    <div className="px-6 py-2 bg-[#090a18] border-b border-white/10 flex items-center justify-between text-xs text-gray-400 font-mono">
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-cyan-400" /> Built-In Live Ticket Chat
+                      </span>
+                      <a
+                        href={discordInvite}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-300 hover:underline flex items-center gap-1 text-[11px]"
+                      >
+                        <DiscordIcon className="w-3 h-3 text-indigo-400" /> Join Discord for instant audio/screen share
+                      </a>
+                    </div>
+
+                    {/* Chat Messages Log */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                      {currentChats.length === 0 ? (
+                        <div className="text-center py-8 text-xs text-gray-500 font-mono">
+                          No messages exchanged yet. Send a message below!
+                        </div>
+                      ) : (
+                        currentChats.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex flex-col ${
+                              msg.sender === 'Admin' ? 'items-end' : 'items-start'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-1 px-1">
+                              <span className="font-bold text-white">{msg.senderName}</span>
+                              <span>({msg.sender})</span>
+                              <span>• {msg.timestamp}</span>
+                            </div>
+
+                            <div
+                              className={`max-w-lg p-3.5 rounded-2xl text-xs leading-relaxed font-sans shadow-lg ${
+                                msg.sender === 'Admin'
+                                  ? 'bg-purple-600 text-white rounded-tr-none'
+                                  : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/10'
+                              }`}
+                            >
+                              {msg.text}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Chat Input Form */}
+                    <form onSubmit={handleSendChat} className="p-4 border-t border-white/10 bg-[#070818] flex gap-3">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder={`Type message to ticket #${selectedRequest.id}...`}
+                        className="flex-1 px-4 py-3 rounded-xl glass-input text-xs"
+                      />
+                      <button
+                        type="submit"
+                        className="px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/30"
+                      >
+                        <Send className="w-4 h-4" /> Send
+                      </button>
+                    </form>
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">

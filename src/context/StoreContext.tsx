@@ -36,6 +36,7 @@ export type RequestStatus = 'Pending' | 'Accepted' | 'In Progress' | 'Completed'
 
 export interface OrderRequest {
   id: string; // e.g. ZYT-849201
+  ownerId: string; // Unique client owner ID
   name: string;
   email: string;
   discord: string;
@@ -142,6 +143,11 @@ interface StoreContextType {
   orderRequests: OrderRequest[];
   ticketChats: TicketChatMessage[];
 
+  // Client Session & Security
+  clientOwnerId: string;
+  getUserRequests: () => OrderRequest[];
+  canAccessTicket: (requestId: string) => boolean;
+
   // Admin Auth
   isAdmin: boolean;
   adminRole: AdminRole;
@@ -207,7 +213,7 @@ interface StoreContextType {
   deleteService: (id: string) => void;
 
   // Order Requests & Ticket System
-  addOrderRequest: (req: Omit<OrderRequest, 'status' | 'createdAt'>) => OrderRequest;
+  addOrderRequest: (req: Omit<OrderRequest, 'ownerId' | 'status' | 'createdAt'>) => OrderRequest;
   updateRequestStatus: (id: string, status: RequestStatus) => void;
   deleteOrderRequest: (id: string) => void;
   addChatMessage: (msg: Omit<TicketChatMessage, 'id' | 'timestamp'>) => void;
@@ -334,6 +340,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [editorPin, setEditorPinState] = useState<string>(() => localStorage.getItem('zyt_editor_pin') || 'editor123');
   const [discordWebhookUrl, setDiscordWebhookUrlState] = useState<string>(() => localStorage.getItem('zyt_discord_webhook') || '');
 
+  // Unique Client Owner ID Session for strict Ticket Permissions
+  const [clientOwnerId] = useState<string>(() => {
+    let saved = localStorage.getItem('zyt_client_owner_id');
+    if (!saved) {
+      saved = 'client_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('zyt_client_owner_id', saved);
+    }
+    return saved;
+  });
+
   // CMS Section Contents
   const [cmsSections, setCmsSections] = useState<CMSSections>(() => {
     const saved = localStorage.getItem('zyt_cms_sections');
@@ -395,6 +411,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [
       {
         id: 'ZYT-849201',
+        ownerId: 'demo_client_1',
         name: 'Alex Vance',
         email: 'alex@playmine.net',
         discord: 'alex_vance#1234',
@@ -410,6 +427,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       },
       {
         id: 'ZYT-612948',
+        ownerId: 'demo_client_2',
         name: 'Marcus Brody',
         email: 'marcus@craftpvp.org',
         discord: 'brody_pvp#0001',
@@ -486,6 +504,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('zyt_request_chats', JSON.stringify(ticketChats));
   }, [ticketChats]);
+
+  // Security Helper: Filter Requests based on Role & Ticket Ownership
+  const getUserRequests = (): OrderRequest[] => {
+    if (isAdmin) {
+      return orderRequests;
+    }
+    return orderRequests.filter((req) => req.ownerId === clientOwnerId);
+  };
+
+  const canAccessTicket = (requestId: string): boolean => {
+    if (isAdmin) return true;
+    const req = orderRequests.find((r) => r.id === requestId);
+    return !!req && req.ownerId === clientOwnerId;
+  };
 
   // Auth & Roles
   const loginRole = (pin: string) => {
@@ -636,7 +668,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Order Requests Platform Actions
-  const addOrderRequest = (reqData: Omit<OrderRequest, 'status' | 'createdAt'>) => {
+  const addOrderRequest = (reqData: Omit<OrderRequest, 'ownerId' | 'status' | 'createdAt'>) => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-US', {
       month: 'short',
@@ -648,6 +680,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const newRequest: OrderRequest = {
       ...reqData,
+      ownerId: clientOwnerId,
       status: 'Pending',
       createdAt: formattedDate,
     };
@@ -690,6 +723,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const addChatMessage = (msgData: Omit<TicketChatMessage, 'id' | 'timestamp'>) => {
+    // Permission Security Check: Client can only post in tickets they own
+    if (!canAccessTicket(msgData.requestId)) {
+      console.warn('Access Denied: Cannot post in a ticket you do not own.');
+      return;
+    }
+
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -854,6 +893,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         services,
         orderRequests,
         ticketChats,
+        clientOwnerId,
+        getUserRequests,
+        canAccessTicket,
         isAdmin,
         adminRole,
         adminPin,

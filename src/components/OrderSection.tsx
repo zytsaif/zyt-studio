@@ -196,7 +196,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
         <div className="glass-card rounded-3xl p-8 sm:p-12 border border-purple-500/30 shadow-2xl relative">
           {submitted ? (
             /* Discord CTA & Success Screen */
-            <div className="text-center py-10 space-y-6">
+            <div className="text-center py-8 space-y-6">
               <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-xl">
                 <CheckCircle2 className="w-10 h-10 text-emerald-400" />
               </div>
@@ -219,32 +219,34 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                 </div>
               </div>
 
-              {/* Discord CTA Prominent Card */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900 border border-indigo-500/50 max-w-xl mx-auto space-y-4 shadow-2xl">
-                <div className="flex items-center justify-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-                  <DiscordIcon className="w-4 h-4 text-indigo-400" /> Instant Project Discussion
+              {/* PROMINENT DISCORD CTA BOX */}
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-950/90 via-purple-950/90 to-slate-900 border-2 border-indigo-500/60 max-w-xl mx-auto space-y-4 shadow-2xl">
+                <div className="space-y-1">
+                  <h4 className="text-indigo-300 font-bold text-sm tracking-wide">
+                    Need faster communication?
+                  </h4>
+                  <p className="text-2xl font-extrabold text-white">
+                    Join our Discord Server
+                  </p>
                 </div>
-                <p className="text-sm text-white font-semibold">
-                  For faster communication and project discussion, join our Discord server.
-                </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <a
                     href={discordInvite}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-7 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/40"
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/40 hover:scale-105 transition-all"
                   >
-                    <DiscordIcon className="w-4 h-4" /> Join Discord Server
+                    <DiscordIcon className="w-4 h-4" /> JOIN DISCORD
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
 
                   {onOpenRequestsPortal && (
                     <button
                       onClick={onOpenRequestsPortal}
-                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 border border-white/10"
+                      className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 border border-white/10"
                     >
-                      <Ticket className="w-4 h-4 text-cyan-400" /> Track in Requests Portal
+                      <Ticket className="w-4 h-4 text-cyan-400" /> Open Ticket Page
                     </button>
                   )}
                 </div>

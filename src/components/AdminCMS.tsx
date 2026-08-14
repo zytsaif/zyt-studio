@@ -503,6 +503,43 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ isOpen, onClose, onTriggerTo
                     </div>
                   </div>
 
+                  {/* Client Requests Metrics Banner */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="glass-card p-4 rounded-2xl border border-cyan-500/30">
+                      <div className="text-[11px] text-gray-400 font-mono">Total Orders</div>
+                      <div className="text-2xl font-extrabold text-white font-mono mt-1">
+                        {orderRequests.length}
+                      </div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl border border-amber-500/30">
+                      <div className="text-[11px] text-gray-400 font-mono">Pending Orders</div>
+                      <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
+                        {orderRequests.filter((r) => r.status === 'Pending').length}
+                      </div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl border border-purple-500/30">
+                      <div className="text-[11px] text-gray-400 font-mono">In Progress</div>
+                      <div className="text-2xl font-extrabold text-purple-300 font-mono mt-1">
+                        {orderRequests.filter((r) => r.status === 'In Progress').length}
+                      </div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl border border-emerald-500/30">
+                      <div className="text-[11px] text-gray-400 font-mono">Completed</div>
+                      <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
+                        {orderRequests.filter((r) => r.status === 'Completed').length}
+                      </div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl border border-indigo-500/30 col-span-2 sm:col-span-1">
+                      <div className="text-[11px] text-gray-400 font-mono">Est. Revenue</div>
+                      <div className="text-xl font-extrabold text-cyan-300 font-mono mt-1">
+                        ₹{orderRequests
+                          .filter((r) => r.currency === 'INR' && r.status !== 'Rejected')
+                          .reduce((acc, r) => acc + (parseInt(r.budgetMin || '0') + parseInt(r.budgetMax || '0')) / 2, 0)
+                          .toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="glass-card p-5 rounded-2xl">
                       <div className="text-xs text-gray-400">Total Plugins</div>
