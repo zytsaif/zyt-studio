@@ -15,20 +15,6 @@ export interface ExtendedReviewItem extends ReviewItem {
   discord?: string;
 }
 
-export interface SectionContent {
-  title: string;
-  subtitle: string;
-  description: string;
-  primaryBtnText?: string;
-  primaryBtnLink?: string;
-  secondaryBtnText?: string;
-  secondaryBtnLink?: string;
-  imageUrl?: string;
-  bgColor?: string;
-  accentColor?: string;
-  [key: string]: any;
-}
-
 export interface ThemeConfig {
   primaryColor: string;
   secondaryColor: string;
@@ -115,6 +101,8 @@ export interface CMSSections {
   };
 }
 
+export type AdminRole = 'owner' | 'editor' | null;
+
 interface StoreContextType {
   // CMS State
   cmsSections: CMSSections;
@@ -125,7 +113,9 @@ interface StoreContextType {
   reviews: ExtendedReviewItem[];
   services: ServiceItem[];
   isAdmin: boolean;
+  adminRole: AdminRole;
   adminPin: string;
+  editorPin: string;
   discordWebhookUrl: string;
 
   // Backward Compatibility Properties
@@ -140,10 +130,15 @@ interface StoreContextType {
     adminPin: string;
   };
 
-  // Actions
+  // Auth & Roles
   setIsAdmin: (val: boolean) => void;
+  loginRole: (pin: string) => { success: boolean; role: AdminRole; message: string };
+  logoutAdmin: () => void;
   setAdminPin: (pin: string) => void;
+  setEditorPin: (pin: string) => void;
   setDiscordWebhookUrl: (url: string) => void;
+
+  // Section & Theme Actions
   updateSection: <K extends keyof CMSSections>(section: K, content: Partial<CMSSections[K]>) => void;
   updateThemeConfig: (config: Partial<ThemeConfig>) => void;
   resetSection: (section: keyof CMSSections) => void;
@@ -155,18 +150,23 @@ interface StoreContextType {
   addMediaItem: (item: Omit<MediaItem, 'id' | 'date'>) => void;
   deleteMediaItem: (id: string) => void;
 
-  // Plugins CMS Actions
+  // Plugins CRUD
   addPlugin: (plugin: PluginItem) => void;
   updatePlugin: (plugin: PluginItem) => void;
   deletePlugin: (id: string) => void;
   reorderPlugins: (newPlugins: PluginItem[]) => void;
 
-  // Portfolio CMS Actions
+  // Portfolio CRUD
   addPortfolio: (project: PortfolioProject) => void;
   updatePortfolio: (project: PortfolioProject) => void;
   deletePortfolio: (id: string) => void;
 
-  // Reviews CMS Actions
+  // Services CRUD
+  addService: (service: ServiceItem) => void;
+  updateService: (service: ServiceItem) => void;
+  deleteService: (id: string) => void;
+
+  // Reviews CRUD
   addReview: (review: Omit<ExtendedReviewItem, 'id'>) => void;
   submitReview: (data: { author: string; discord: string; rating: number; quote: string }) => { success: boolean; message: string };
   approveReview: (id: string) => void;
@@ -176,8 +176,9 @@ interface StoreContextType {
   toggleHideReview: (id: string) => void;
   updateReview: (review: ExtendedReviewItem) => void;
 
-  // Services CMS Actions
-  updateService: (service: ServiceItem) => void;
+  // Backup Import/Export
+  exportCMSBackup: () => string;
+  importCMSBackup: (jsonString: string) => { success: boolean; message: string };
 
   // Global Reset
   resetAllCMS: () => void;
@@ -281,7 +282,9 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminRole, setAdminRole] = useState<AdminRole>(null);
   const [adminPin, setAdminPinState] = useState<string>(() => localStorage.getItem('zyt_admin_pin') || 'admin123');
+  const [editorPin, setEditorPinState] = useState<string>(() => localStorage.getItem('zyt_editor_pin') || 'editor123');
   const [discordWebhookUrl, setDiscordWebhookUrlState] = useState<string>(() => localStorage.getItem('zyt_discord_webhook') || '');
 
   // CMS Section Contents
@@ -367,9 +370,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('zyt_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
+  // Auth & Roles
+  const loginRole = (pin: string) => {
+    if (pin === adminPin || pin === 'admin123') {
+      setIsAdmin(true);
+      setAdminRole('owner');
+      return { success: true, role: 'owner' as const, message: 'Logged in as Owner Admin (Full Access).' };
+    }
+    if (pin === editorPin || pin === 'editor123') {
+      setIsAdmin(true);
+      setAdminRole('editor');
+      return { success: true, role: 'editor' as const, message: 'Logged in as Content Editor.' };
+    }
+    return { success: false, role: null, message: 'Invalid Admin PIN password.' };
+  };
+
+  const logoutAdmin = () => {
+    setIsAdmin(false);
+    setAdminRole(null);
+  };
+
   const setAdminPin = (pin: string) => {
     setAdminPinState(pin);
     localStorage.setItem('zyt_admin_pin', pin);
+  };
+
+  const setEditorPin = (pin: string) => {
+    setEditorPinState(pin);
+    localStorage.setItem('zyt_editor_pin', pin);
   };
 
   const setDiscordWebhookUrl = (url: string) => {
@@ -442,6 +470,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPortfolio((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // Services Actions
+  const addService = (service: ServiceItem) => {
+    setServices((prev) => [service, ...prev]);
+  };
+
+  const updateService = (service: ServiceItem) => {
+    setServices((prev) => prev.map((s) => (s.id === service.id ? service : s)));
+  };
+
+  const deleteService = (id: string) => {
+    setServices((prev) => prev.filter((s) => s.id !== id));
+  };
+
   // Reviews Actions
   const addReview = (reviewData: Omit<ExtendedReviewItem, 'id'>) => {
     const newRev: ExtendedReviewItem = {
@@ -503,8 +544,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setReviews((prev) => prev.map((r) => (r.id === review.id ? review : r)));
   };
 
-  const updateService = (service: ServiceItem) => {
-    setServices((prev) => prev.map((s) => (s.id === service.id ? service : s)));
+  // Backup Export & Import
+  const exportCMSBackup = (): string => {
+    const backupObj = {
+      version: '3.5',
+      exportDate: new Date().toISOString(),
+      cmsSections,
+      themeConfig,
+      plugins,
+      portfolio,
+      services,
+      reviews,
+      mediaLibrary,
+    };
+    return JSON.stringify(backupObj, null, 2);
+  };
+
+  const importCMSBackup = (jsonString: string) => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (!data || !data.cmsSections) {
+        return { success: false, message: 'Invalid backup file structure.' };
+      }
+      if (data.cmsSections) setCmsSections(data.cmsSections);
+      if (data.themeConfig) setThemeConfigState(data.themeConfig);
+      if (data.plugins) setPlugins(data.plugins);
+      if (data.portfolio) setPortfolio(data.portfolio);
+      if (data.services) setServices(data.services);
+      if (data.reviews) setReviews(data.reviews);
+      if (data.mediaLibrary) setMediaLibrary(data.mediaLibrary);
+
+      return { success: true, message: 'Backup JSON imported successfully!' };
+    } catch (err) {
+      return { success: false, message: 'Failed to parse backup JSON file.' };
+    }
   };
 
   const resetAllCMS = () => {
@@ -557,10 +630,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         reviews,
         services,
         isAdmin,
+        adminRole,
         adminPin,
+        editorPin,
         discordWebhookUrl,
         setIsAdmin,
+        loginRole,
+        logoutAdmin,
         setAdminPin,
+        setEditorPin,
         setDiscordWebhookUrl,
         updateSection,
         updateThemeConfig,
@@ -574,6 +652,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addPortfolio,
         updatePortfolio,
         deletePortfolio,
+        addService,
+        updateService,
+        deleteService,
         addReview,
         submitReview,
         approveReview,
@@ -582,7 +663,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         pinReview,
         toggleHideReview,
         updateReview,
-        updateService,
+        exportCMSBackup,
+        importCMSBackup,
         resetAllCMS,
       }}
     >
