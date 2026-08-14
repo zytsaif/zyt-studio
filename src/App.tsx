@@ -11,6 +11,7 @@ import { FeaturedPlugins } from './components/FeaturedPlugins';
 import { PluginModal } from './components/PluginModal';
 import { PortfolioSection } from './components/PortfolioSection';
 import { ServicesSection } from './components/ServicesSection';
+import { ProcessSection } from './components/ProcessSection';
 import { WhyChooseUs } from './components/WhyChooseUs';
 import { OrderSection } from './components/OrderSection';
 import { PaymentSection } from './components/PaymentSection';
@@ -18,6 +19,7 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminCMS } from './components/AdminCMS';
 import { FloatingAdminBar } from './components/FloatingAdminBar';
+import { FloatingActions } from './components/FloatingActions';
 import { ToastNotification } from './components/ToastNotification';
 import { MinecraftAdvancementToast } from './components/MinecraftAdvancementToast';
 import type { AdvancementItem } from './components/MinecraftAdvancementToast';
@@ -102,6 +104,9 @@ function AppContent() {
       {/* Dynamic Cursor Ambient Spotlight */}
       <CursorGlow />
 
+      {/* Sticky Quick Action Bar (Discord & Contact) */}
+      <FloatingActions />
+
       {/* 3D Mascot Loading Screen */}
       <LoadingScreen />
 
@@ -140,6 +145,8 @@ function AppContent() {
         <ServicesSection
           onSelectService={() => scrollToOrder()}
         />
+
+        <ProcessSection />
 
         <WhyChooseUs />
 

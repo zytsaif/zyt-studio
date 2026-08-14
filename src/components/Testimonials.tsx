@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
-import { Star, ChevronLeft, ChevronRight, Quote, ShieldCheck, Plus, MessageSquare, X, CheckCircle2 } from 'lucide-react';
+import { TiltCard } from './TiltCard';
+import { MagneticButton } from './MagneticButton';
+import { Star, ChevronLeft, ChevronRight, Quote, ShieldCheck, Plus, MessageSquare, X } from 'lucide-react';
 
 export const Testimonials: React.FC = () => {
   const { reviews, submitReview } = useStore();
@@ -51,40 +53,51 @@ export const Testimonials: React.FC = () => {
   };
 
   return (
-    <section id="reviews" className="relative py-24 bg-[#05060e] z-10 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/40">
+    <section id="reviews" className="relative py-28 bg-[#05060e] z-10 border-t border-white/5 overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 px-4 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-800/40 font-mono shadow-lg">
             Real Client Feedback
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-4">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-5">
             Client <span className="gradient-text-cyan">Reviews</span>
           </h2>
-          <p className="text-gray-400 mt-4 text-sm sm:text-base">
+          <p className="text-gray-400 mt-4 text-base sm:text-lg leading-relaxed">
             Verified feedback from Minecraft server owners, creators, and community leads.
           </p>
 
-          <button
-            onClick={() => setShowSubmitModal(true)}
-            className="mt-6 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-colors inline-flex items-center gap-2 shadow-lg shadow-purple-600/30"
-          >
-            <Plus className="w-4 h-4" />
-            Write a Review
-          </button>
-        </div>
+          <div className="mt-6">
+            <MagneticButton
+              onClick={() => setShowSubmitModal(true)}
+              className="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-mono font-bold text-xs inline-flex items-center gap-2 shadow-xl shadow-purple-600/30"
+            >
+              <Plus className="w-4 h-4" />
+              Write a Review
+            </MagneticButton>
+          </div>
+        </motion.div>
 
         {/* Testimonial Slider Box */}
         {visibleReviews.length > 0 && activeReview ? (
           <div className="max-w-4xl mx-auto">
-            <div className="relative glass-card rounded-3xl p-8 sm:p-12 border border-purple-500/30 overflow-hidden shadow-2xl bg-gradient-to-br from-[#0c0d1e] via-[#080916] to-[#04050d]">
+            <TiltCard className="glass-card rounded-3xl p-8 sm:p-12 border border-purple-500/30 overflow-hidden shadow-2xl bg-gradient-to-br from-[#0c0d1e] via-[#080916] to-[#04050d] relative">
               <Quote className="absolute top-6 right-6 w-24 h-24 text-purple-600/10 pointer-events-none" />
 
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeReview.id}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 25 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -25 }}
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
@@ -100,7 +113,7 @@ export const Testimonials: React.FC = () => {
                     </div>
 
                     {activeReview.pinned && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      <span className="px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-md">
                         📌 Pinned Review
                       </span>
                     )}
@@ -124,12 +137,12 @@ export const Testimonials: React.FC = () => {
                           {activeReview.author}
                         </h4>
                         <div className="text-xs text-purple-300 font-medium">
-                          {activeReview.role} • <span className="text-cyan-400">{activeReview.discord}</span>
+                          {activeReview.role} • <span className="text-cyan-400 font-mono">{activeReview.discord}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 text-xs font-mono flex items-center gap-1.5">
+                    <div className="px-3.5 py-1.5 rounded-xl bg-emerald-950/50 border border-emerald-800/40 text-emerald-400 text-xs font-mono flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       {activeReview.verifiedOrder}
                     </div>
@@ -166,10 +179,10 @@ export const Testimonials: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-400">No reviews published yet. Be the first to submit a review!</div>
+          <div className="text-center py-12 text-gray-400 font-mono">No reviews published yet. Be the first to submit a review!</div>
         )}
       </div>
 
