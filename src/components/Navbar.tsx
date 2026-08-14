@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
   const orderBtnText = cmsNavbar?.orderBtnText || 'Order Plugin';
   const discordInvite = contact?.discordInvite || 'https://discord.gg';
 
-  const links = cmsNavbar?.links || [
+  const rawLinks = cmsNavbar?.links || [
     { name: 'Home', href: '#hero' },
     { name: 'Plugins', href: '#plugins' },
     { name: 'Portfolio', href: '#portfolio' },
@@ -28,6 +28,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOrderClick, onOpenAdmin }) => 
     { name: 'Payment', href: '#payment' },
     { name: 'Contact', href: '#contact' },
   ];
+
+  // Completely filter out any legacy 'Reviews' link
+  const links = rawLinks.filter(
+    (l) => l.name.toLowerCase() !== 'reviews' && l.href !== '#reviews'
+  );
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
