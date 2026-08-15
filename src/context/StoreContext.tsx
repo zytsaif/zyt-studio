@@ -290,10 +290,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ];
   });
 
-  // Plugins
+  // Plugins with Automatic Migration & Price/Version Audit Sync
   const [plugins, setPlugins] = useState<PluginItem[]>(() => {
     const saved = localStorage.getItem('zyt_plugins');
-    return saved ? JSON.parse(saved) : PLUGINS_DATA;
+    if (!saved) return PLUGINS_DATA;
+
+    try {
+      const parsed: PluginItem[] = JSON.parse(saved);
+      // Auto-migrate outdated prices and versions using PLUGINS_DATA as source of truth
+      const migrated = parsed.map((p) => {
+        const canonical = PLUGINS_DATA.find(
+          (c) => c.id === p.id || c.name.toLowerCase().trim() === p.name.toLowerCase().trim()
+        );
+        if (canonical) {
+          return {
+            ...p,
+            price: canonical.price,
+            inrPrice: canonical.inrPrice,
+            minecraftVersion: canonical.minecraftVersion,
+          };
+        }
+        return {
+          ...p,
+          minecraftVersion: 'Minecraft 1.21 - 1.21.11',
+        };
+      });
+
+      // Write migrated plugins back to localStorage to clear any stale records
+      localStorage.setItem('zyt_plugins', JSON.stringify(migrated));
+      return migrated;
+    } catch {
+      return PLUGINS_DATA;
+    }
   });
 
   // Portfolio
