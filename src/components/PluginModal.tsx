@@ -105,30 +105,35 @@ export const PluginModal: React.FC<PluginModalProps> = ({
               {/* Version & Price Badges */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <div className="text-xs text-gray-400">Supported Versions</div>
+                  <div className="text-xs text-gray-400 font-mono">Supported Versions</div>
                   <div className="text-sm font-semibold text-white font-mono mt-0.5">
                     {plugin.minecraftVersion}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <div className="text-xs text-gray-400">Rating & Satisfaction</div>
+                  <div className="text-xs text-gray-400 font-mono">Rating & Satisfaction</div>
                   <div className="text-sm font-semibold text-yellow-400 font-mono mt-0.5 flex items-center gap-1">
                     ★ {plugin.rating} / 5.0 ({plugin.salesCount}+ licenses)
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 col-span-2 sm:col-span-1">
-                  <div className="text-xs text-purple-300">Price</div>
-                  <div className="text-xl font-bold text-cyan-400 font-mono">
-                    {plugin.price}
+                  <div className="text-xs text-purple-300 font-mono">Price</div>
+                  <div className="text-xl font-bold text-cyan-400 font-mono flex items-baseline gap-2">
+                    <span>{plugin.price}</span>
+                    {plugin.inrPrice && (
+                      <span className="text-xs text-gray-400 font-semibold font-mono">
+                        ({plugin.inrPrice})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Comprehensive Features List */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-3 font-mono">
                   Full Feature Architecture
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -145,7 +150,7 @@ export const PluginModal: React.FC<PluginModalProps> = ({
 
           {activeTab === 'commands' && (
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-2 font-mono">
                 Available Command Nodes
               </h4>
               {plugin.commands.map((cmd, idx) => (
@@ -168,7 +173,7 @@ export const PluginModal: React.FC<PluginModalProps> = ({
                 <span className="text-xs font-mono text-gray-400">config.yml snippet</span>
                 <button
                   onClick={handleCopyConfig}
-                  className="px-3 py-1 text-xs rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1 text-xs rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5 transition-colors font-mono"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
                   {copied ? 'Copied' : 'Copy Config'}
@@ -184,7 +189,7 @@ export const PluginModal: React.FC<PluginModalProps> = ({
 
         {/* Footer Actions */}
         <div className="p-6 bg-slate-950 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Instant License Key Delivery & Lifetime Spigot Updates</span>
           </div>
@@ -195,10 +200,10 @@ export const PluginModal: React.FC<PluginModalProps> = ({
                 onClose();
                 onOrderCustom();
               }}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white font-bold text-xs font-mono shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all flex items-center justify-center gap-2"
             >
               <Zap className="w-4 h-4 text-cyan-300" />
-              Order Plugin ({plugin.price})
+              Order Plugin ({plugin.price} {plugin.inrPrice ? `/ ${plugin.inrPrice}` : ''})
             </button>
           </div>
         </div>

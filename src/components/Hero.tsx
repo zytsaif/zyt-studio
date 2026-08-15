@@ -189,7 +189,7 @@ export const Hero: React.FC<HeroProps> = ({ onOrderClick, onViewWorkClick }) => 
               </span>
             </div>
             <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
-              Spigot / Paper / Folia 1.20.6
+              Spigot / Paper / Folia 1.21 - 1.21.11
             </span>
           </div>
           <div className="p-4 font-mono text-xs text-gray-300 space-y-1.5 bg-[#05060f]/95">

@@ -5,7 +5,7 @@ import type { PluginItem } from '../data/pluginsData';
 import { InlineEditableText } from './InlineEditableText';
 import { TiltCard } from './TiltCard';
 import { MagneticButton } from './MagneticButton';
-import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Eye, Plus, Trash2, ArrowUp, ArrowDown, Award } from 'lucide-react';
+import { Video, Skull, Disc, Swords, Trophy, ShieldCheck, ArrowRight, Check, Sparkles, Eye, Plus, Trash2, ArrowUp, ArrowDown, Award, Layers } from 'lucide-react';
 
 interface FeaturedPluginsProps {
   onSelectPlugin: (plugin: PluginItem) => void;
@@ -40,7 +40,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
 
   const getRarityInfo = (plg: PluginItem) => {
     const priceNum = parseFloat(plg.price.replace(/[^0-9.]/g, '')) || 0;
-    if (plg.name.includes('Mocap') || priceNum >= 35) {
+    if (plg.name.includes('Mocap') || priceNum >= 20) {
       return {
         tier: 'LEGENDARY',
         badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/60 shadow-amber-500/20',
@@ -48,7 +48,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
         iconBg: 'bg-amber-950/50 border-amber-500/40 text-amber-400',
       };
     }
-    if (priceNum >= 20 || plg.name.includes('Economy')) {
+    if (priceNum >= 14 || plg.name.includes('Economy')) {
       return {
         tier: 'EPIC',
         badgeClass: 'bg-purple-950/90 text-purple-300 border-purple-500/60 shadow-purple-500/20',
@@ -56,7 +56,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
         iconBg: 'bg-purple-950/50 border-purple-500/40 text-purple-400',
       };
     }
-    if (priceNum >= 10 || plg.name.includes('Kits')) {
+    if (priceNum >= 10 || plg.name.includes('Kits') || plg.name.includes('Streak')) {
       return {
         tier: 'RARE',
         badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-500/60 shadow-cyan-500/20',
@@ -89,8 +89,9 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
       tagline: 'Cinematic Motion Capture & Player Keyframe Suite',
       description: 'Cinematic motion capture, camera path recording, & replay tools for Minecraft animation & content creation.',
       category: 'Recording / Cinematic Tools',
-      minecraftVersion: '1.18 - 1.20.6',
-      price: '$39.99',
+      minecraftVersion: 'Minecraft 1.21 - 1.21.11',
+      price: '$24.99',
+      inrPrice: '₹2,099',
       rating: 5.0,
       salesCount: 1,
       iconName: 'Video',
@@ -225,7 +226,7 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                     )}
 
                     <div>
-                      {/* Top Rarity Badge & Price */}
+                      {/* Top Rarity Badge & Price Display */}
                       <div className="flex items-center justify-between mb-6">
                         <div className={`w-13 h-13 rounded-2xl border flex items-center justify-center group-hover:scale-110 transition-all shadow-md ${rarity.iconBg}`}>
                           <IconComponent className="w-6 h-6" />
@@ -237,23 +238,36 @@ export const FeaturedPlugins: React.FC<FeaturedPluginsProps> = ({
                             <Award className="w-3 h-3" /> {rarity.tier}
                           </span>
 
-                          <span className="px-3.5 py-1.5 rounded-full text-xs font-extrabold font-mono bg-purple-950/90 text-cyan-300 border border-purple-500/40 shadow-lg">
-                            <InlineEditableText
-                              value={plugin.price}
-                              onSave={(val) => updatePlugin({ ...plugin, price: val })}
-                            />
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className="px-3.5 py-1 rounded-full text-xs font-extrabold font-mono bg-purple-950/90 text-cyan-300 border border-purple-500/40 shadow-lg">
+                              <InlineEditableText
+                                value={plugin.price}
+                                onSave={(val) => updatePlugin({ ...plugin, price: val })}
+                              />
+                            </span>
+                            {plugin.inrPrice && (
+                              <span className="text-[10px] text-gray-400 font-mono mt-0.5 font-semibold">
+                                (~{plugin.inrPrice})
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Plugin Name */}
-                      <h3 className="text-2xl font-extrabold text-white font-mono mb-2 group-hover:text-purple-300 transition-colors">
+                      <h3 className="text-2xl font-extrabold text-white font-mono mb-1 group-hover:text-purple-300 transition-colors">
                         <InlineEditableText
                           value={plugin.name}
                           onSave={(val) => updatePlugin({ ...plugin, name: val })}
                           tagName="span"
                         />
                       </h3>
+
+                      {/* Supported Minecraft Versions Tag */}
+                      <div className="text-[11px] font-mono text-cyan-400 font-semibold mb-4 flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-purple-400" />
+                        Supported Versions: {plugin.minecraftVersion}
+                      </div>
 
                       {/* Description */}
                       <div className="text-xs text-gray-300 leading-relaxed mb-6">
